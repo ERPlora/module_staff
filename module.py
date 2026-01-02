@@ -16,7 +16,7 @@ MODULE_CATEGORY = "hr"  # Changed from "services" to valid category
 
 # Target Industries (business verticals this module is designed for)
 MODULE_INDUSTRIES = [
-    "salon",      # Beauty & wellness
+    "beauty",     # Beauty & wellness
     "restaurant", # Restaurants
     "bar",        # Bars & pubs
     "hotel",      # Hotels & lodging
