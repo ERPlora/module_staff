@@ -12,7 +12,17 @@ MODULE_ID = "staff"
 MODULE_NAME = _("Staff")
 MODULE_ICON = "people-outline"
 MODULE_VERSION = "1.0.0"
-MODULE_CATEGORY = "services"
+MODULE_CATEGORY = "hr"  # Changed from "services" to valid category
+
+# Target Industries (business verticals this module is designed for)
+MODULE_INDUSTRIES = [
+    "salon",      # Beauty & wellness
+    "restaurant", # Restaurants
+    "bar",        # Bars & pubs
+    "hotel",      # Hotels & lodging
+    "retail",     # Retail stores
+    "healthcare", # Healthcare
+]
 
 # Sidebar Menu Configuration
 MENU = {
