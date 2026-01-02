@@ -1,0 +1,126 @@
+{% extends "ui/module_content.html" %}
+{% load i18n %}
+
+{% block page_header %}
+<ion-toolbar>
+    <ion-buttons slot="start">
+        <ion-back-button default-href="{% url 'staff:dashboard' %}"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{% trans "Staff Settings" %}</ion-title>
+</ion-toolbar>
+{% endblock %}
+
+{% block page_content %}
+<div class="settings-container">
+    <form method="post">
+        {% csrf_token %}
+
+        <ion-list>
+            <ion-list-header>
+                <ion-label>{% trans "Default Working Hours" %}</ion-label>
+            </ion-list-header>
+
+            <ion-item>
+                <ion-input
+                    label="{% trans 'Work Start Time' %}"
+                    label-placement="stacked"
+                    type="time"
+                    name="default_work_start"
+                    value="{{ config.default_work_start|time:'H:i' }}">
+                </ion-input>
+            </ion-item>
+
+            <ion-item>
+                <ion-input
+                    label="{% trans 'Work End Time' %}"
+                    label-placement="stacked"
+                    type="time"
+                    name="default_work_end"
+                    value="{{ config.default_work_end|time:'H:i' }}">
+                </ion-input>
+            </ion-item>
+
+            <ion-item>
+                <ion-input
+                    label="{% trans 'Break Duration (minutes)' %}"
+                    label-placement="stacked"
+                    type="number"
+                    min="0"
+                    name="default_break_duration"
+                    value="{{ config.default_break_duration }}">
+                </ion-input>
+            </ion-item>
+        </ion-list>
+
+        <ion-list>
+            <ion-list-header>
+                <ion-label>{% trans "Booking Settings" %}</ion-label>
+            </ion-list-header>
+
+            <ion-item>
+                <ion-toggle name="allow_online_booking" {% if config.allow_online_booking %}checked{% endif %}>
+                    {% trans "Allow Online Booking" %}
+                </ion-toggle>
+            </ion-item>
+
+            <ion-item>
+                <ion-toggle name="require_staff_selection" {% if config.require_staff_selection %}checked{% endif %}>
+                    {% trans "Require Staff Selection for Bookings" %}
+                </ion-toggle>
+            </ion-item>
+
+            <ion-item>
+                <ion-toggle name="show_staff_photos" {% if config.show_staff_photos %}checked{% endif %}>
+                    {% trans "Show Staff Photos to Customers" %}
+                </ion-toggle>
+            </ion-item>
+        </ion-list>
+
+        <ion-list>
+            <ion-list-header>
+                <ion-label>{% trans "Time Off Settings" %}</ion-label>
+            </ion-list-header>
+
+            <ion-item>
+                <ion-toggle name="auto_approve_time_off" {% if config.auto_approve_time_off %}checked{% endif %}>
+                    {% trans "Auto-Approve Time Off Requests" %}
+                </ion-toggle>
+            </ion-item>
+
+            <ion-item>
+                <ion-input
+                    label="{% trans 'Maximum Days Off Per Year' %}"
+                    label-placement="stacked"
+                    type="number"
+                    min="0"
+                    name="max_days_off_per_year"
+                    value="{{ config.max_days_off_per_year }}">
+                </ion-input>
+            </ion-item>
+        </ion-list>
+
+        <div class="form-actions">
+            <ion-button type="submit" expand="block">
+                <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+                {% trans "Save Settings" %}
+            </ion-button>
+        </div>
+    </form>
+</div>
+
+<style>
+.settings-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.form-actions {
+    margin-top: 24px;
+}
+
+ion-list {
+    margin-bottom: 16px;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends "ui/module_content.html" %}
+{% load i18n %}
+
+{% block page_content %}
+<div class="dashboard-container">
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <ion-card class="stat-card">
+            <ion-card-content>
+                <div class="stat-value">{{ stats.total_staff }}</div>
+                <div class="stat-label">{% trans "Total Staff" %}</div>
+            </ion-card-content>
+        </ion-card>
+
+        <ion-card class="stat-card">
+            <ion-card-content>
+                <div class="stat-value text-success">{{ stats.active_staff }}</div>
+                <div class="stat-label">{% trans "Active" %}</div>
+            </ion-card-content>
+        </ion-card>
+
+        <ion-card class="stat-card">
+            <ion-card-content>
+                <div class="stat-value text-warning">{{ stats.on_leave }}</div>
+                <div class="stat-label">{% trans "On Leave" %}</div>
+            </ion-card-content>
+        </ion-card>
+
+        <ion-card class="stat-card">
+            <ion-card-content>
+                <div class="stat-value">{{ stats.bookable_staff }}</div>
+                <div class="stat-label">{% trans "Bookable" %}</div>
+            </ion-card-content>
+        </ion-card>
+    </div>
+
+    <!-- Quick Actions -->
+    <ion-card>
+        <ion-card-header>
+            <ion-card-title>{% trans "Quick Actions" %}</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+            <div class="quick-actions">
+                <ion-button href="{% url 'staff:staff_create' %}" fill="outline">
+                    <ion-icon slot="start" name="person-add-outline"></ion-icon>
+                    {% trans "Add Staff" %}
+                </ion-button>
+                <ion-button href="{% url 'staff:role_list' %}" fill="outline">
+                    <ion-icon slot="start" name="shield-outline"></ion-icon>
+                    {% trans "Manage Roles" %}
+                </ion-button>
+                <ion-button href="{% url 'staff:time_off_list' %}" fill="outline">
+                    <ion-icon slot="start" name="calendar-outline"></ion-icon>
+                    {% trans "Time Off Requests" %}
+                </ion-button>
+            </div>
+        </ion-card-content>
+    </ion-card>
+
+    <!-- Recent Staff -->
+    <ion-card>
+        <ion-card-header>
+            <ion-card-title>{% trans "Recent Staff Members" %}</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+            {% if recent_staff %}
+            <ion-list>
+                {% for member in recent_staff %}
+                <ion-item href="{% url 'staff:staff_detail' member.id %}" detail>
+                    <ion-avatar slot="start">
+                        {% if member.photo %}
+                        <img src="{{ member.photo.url }}" alt="{{ member.full_name }}">
+                        {% else %}
+                        <ion-icon name="person-circle-outline" style="font-size: 40px;"></ion-icon>
+                        {% endif %}
+                    </ion-avatar>
+                    <ion-label>
+                        <h2>{{ member.full_name }}</h2>
+                        <p>{{ member.role.name|default:"-" }}</p>
+                    </ion-label>
+                    <ion-badge slot="end" color="{% if member.status == 'active' %}success{% elif member.status == 'on_leave' %}warning{% else %}medium{% endif %}">
+                        {{ member.get_status_display }}
+                    </ion-badge>
+                </ion-item>
+                {% endfor %}
+            </ion-list>
+            {% else %}
+            <div class="empty-state">
+                <ion-icon name="people-outline"></ion-icon>
+                <p>{% trans "No staff members yet" %}</p>
+                <ion-button href="{% url 'staff:staff_create' %}" size="small">
+                    {% trans "Add First Staff Member" %}
+                </ion-button>
+            </div>
+            {% endif %}
+        </ion-card-content>
+    </ion-card>
+
+    <!-- Pending Time Off -->
+    {% if pending_time_off %}
+    <ion-card>
+        <ion-card-header>
+            <ion-card-title>{% trans "Pending Time Off Requests" %}</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+            <ion-list>
+                {% for request in pending_time_off %}
+                <ion-item>
+                    <ion-label>
+                        <h2>{{ request.staff.full_name }}</h2>
+                        <p>{{ request.start_date|date:"M d" }} - {{ request.end_date|date:"M d, Y" }}</p>
+                        <p class="text-muted">{{ request.get_leave_type_display }}</p>
+                    </ion-label>
+                    <ion-button slot="end" size="small" color="success"
+                        hx-post="{% url 'staff:time_off_approve' request.id %}"
+                        hx-swap="outerHTML">
+                        {% trans "Approve" %}
+                    </ion-button>
+                </ion-item>
+                {% endfor %}
+            </ion-list>
+        </ion-card-content>
+    </ion-card>
+    {% endif %}
+</div>
+
+<style>
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.stat-card {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.stat-label {
+    color: var(--ion-color-medium);
+    font-size: 0.875rem;
+}
+
+.quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 32px;
+    color: var(--ion-color-medium);
+}
+
+.empty-state ion-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+</style>
+{% endblock %}

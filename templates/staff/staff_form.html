@@ -1,0 +1,208 @@
+{% extends "ui/app_base.html" %}
+{% load i18n %}
+
+{% block page_title %}{% if staff %}{% trans "Edit Staff Member" %}{% else %}{% trans "New Staff Member" %}{% endif %}{% endblock %}
+
+{% block page_content %}
+<form method="post" enctype="multipart/form-data" class="form-container">
+    {% csrf_token %}
+
+    <ion-list>
+        <ion-list-header>
+            <ion-label>{% trans "Personal Information" %}</ion-label>
+        </ion-list-header>
+
+        <ion-item>
+            <ion-input
+                label="{% trans 'First Name' %}"
+                label-placement="stacked"
+                name="first_name"
+                value="{{ staff.first_name|default:'' }}"
+                required>
+            </ion-input>
+        </ion-item>
+
+        <ion-item>
+            <ion-input
+                label="{% trans 'Last Name' %}"
+                label-placement="stacked"
+                name="last_name"
+                value="{{ staff.last_name|default:'' }}"
+                required>
+            </ion-input>
+        </ion-item>
+
+        <ion-item>
+            <ion-input
+                label="{% trans 'Email' %}"
+                label-placement="stacked"
+                type="email"
+                name="email"
+                value="{{ staff.email|default:'' }}">
+            </ion-input>
+        </ion-item>
+
+        <ion-item>
+            <ion-input
+                label="{% trans 'Phone' %}"
+                label-placement="stacked"
+                type="tel"
+                name="phone"
+                value="{{ staff.phone|default:'' }}">
+            </ion-input>
+        </ion-item>
+
+        <ion-item>
+            <ion-input
+                label="{% trans 'Employee ID' %}"
+                label-placement="stacked"
+                name="employee_id"
+                value="{{ staff.employee_id|default:'' }}">
+            </ion-input>
+        </ion-item>
+
+        <ion-item>
+            <ion-label position="stacked">{% trans "Photo" %}</ion-label>
+            <input type="file" name="photo" accept="image/*" class="file-input">
+        </ion-item>
+    </ion-list>
+
+    <ion-list>
+        <ion-list-header>
+            <ion-label>{% trans "Employment Details" %}</ion-label>
+        </ion-list-header>
+
+        <ion-item>
+            <ion-select
+                label="{% trans 'Role' %}"
+                label-placement="stacked"
+                name="role_id"
+                interface="action-sheet">
+                <ion-select-option value="">{% trans "No Role" %}</ion-select-option>
+                {% for role in roles %}
+                <ion-select-option value="{{ role.id }}" {% if staff.role_id == role.id %}selected{% endif %}>
+                    {{ role.name }}
+                </ion-select-option>
+                {% endfor %}
+            </ion-select>
+        </ion-item>
+
+        <ion-item>
+            <ion-select
+                label="{% trans 'Status' %}"
+                label-placement="stacked"
+                name="status"
+                value="{{ staff.status|default:'active' }}"
+                interface="action-sheet">
+                <ion-select-option value="active">{% trans "Active" %}</ion-select-option>
+                <ion-select-option value="inactive">{% trans "Inactive" %}</ion-select-option>
+                <ion-select-option value="on_leave">{% trans "On Leave" %}</ion-select-option>
+                <ion-select-option value="terminated">{% trans "Terminated" %}</ion-select-option>
+            </ion-select>
+        </ion-item>
+
+        <ion-item>
+            <ion-input
+                label="{% trans 'Hire Date' %}"
+                label-placement="stacked"
+                type="date"
+                name="hire_date"
+                value="{{ staff.hire_date|date:'Y-m-d'|default:'' }}">
+            </ion-input>
+        </ion-item>
+
+        <ion-item>
+            <ion-toggle name="is_bookable" {% if staff.is_bookable %}checked{% endif %}>
+                {% trans "Available for Bookings" %}
+            </ion-toggle>
+        </ion-item>
+    </ion-list>
+
+    <ion-list>
+        <ion-list-header>
+            <ion-label>{% trans "Compensation" %}</ion-label>
+        </ion-list-header>
+
+        <ion-item>
+            <ion-input
+                label="{% trans 'Hourly Rate' %}"
+                label-placement="stacked"
+                type="number"
+                step="0.01"
+                name="hourly_rate"
+                value="{{ staff.hourly_rate|default:'' }}">
+            </ion-input>
+        </ion-item>
+
+        <ion-item>
+            <ion-input
+                label="{% trans 'Commission Rate (%)' %}"
+                label-placement="stacked"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                name="commission_rate"
+                value="{{ staff.commission_rate|default:'' }}">
+            </ion-input>
+        </ion-item>
+    </ion-list>
+
+    <ion-list>
+        <ion-list-header>
+            <ion-label>{% trans "Additional Information" %}</ion-label>
+        </ion-list-header>
+
+        <ion-item>
+            <ion-textarea
+                label="{% trans 'Bio' %}"
+                label-placement="stacked"
+                name="bio"
+                rows="3"
+                placeholder="{% trans 'Short biography or description...' %}">{{ staff.bio|default:'' }}</ion-textarea>
+        </ion-item>
+
+        <ion-item>
+            <ion-textarea
+                label="{% trans 'Notes' %}"
+                label-placement="stacked"
+                name="notes"
+                rows="3"
+                placeholder="{% trans 'Internal notes...' %}">{{ staff.notes|default:'' }}</ion-textarea>
+        </ion-item>
+    </ion-list>
+
+    <div class="form-actions">
+        <ion-button type="submit" expand="block">
+            <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+            {% if staff %}{% trans "Update Staff Member" %}{% else %}{% trans "Create Staff Member" %}{% endif %}
+        </ion-button>
+        <ion-button href="{% url 'staff:staff_list' %}" fill="outline" expand="block" color="medium">
+            {% trans "Cancel" %}
+        </ion-button>
+    </div>
+</form>
+
+<style>
+.form-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.form-actions {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.file-input {
+    padding: 12px 0;
+}
+
+ion-list {
+    margin-bottom: 16px;
+}
+</style>
+{% endblock %}
