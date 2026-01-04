@@ -174,7 +174,7 @@
 
     <div class="form-actions">
         <ion-button type="submit" expand="block">
-            <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+            {% icon "checkmark-outline" %}
             {% if staff %}{% trans "Update Staff Member" %}{% else %}{% trans "Create Staff Member" %}{% endif %}
         </ion-button>
         <ion-button href="{% url 'staff:staff_list' %}" fill="outline" expand="block" color="medium">

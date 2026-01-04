@@ -42,15 +42,15 @@
         <ion-card-content>
             <div class="quick-actions">
                 <ion-button href="{% url 'staff:staff_create' %}" fill="outline">
-                    <ion-icon slot="start" name="person-add-outline"></ion-icon>
+                    {% icon "person-add-outline" %}
                     {% trans "Add Staff" %}
                 </ion-button>
                 <ion-button href="{% url 'staff:role_list' %}" fill="outline">
-                    <ion-icon slot="start" name="shield-outline"></ion-icon>
+                    {% icon "shield-outline" %}
                     {% trans "Manage Roles" %}
                 </ion-button>
                 <ion-button href="{% url 'staff:time_off_list' %}" fill="outline">
-                    <ion-icon slot="start" name="calendar-outline"></ion-icon>
+                    {% icon "calendar-outline" %}
                     {% trans "Time Off Requests" %}
                 </ion-button>
             </div>
@@ -86,7 +86,7 @@
             </ion-list>
             {% else %}
             <div class="empty-state">
-                <ion-icon name="people-outline"></ion-icon>
+                {% icon "people-outline" %}
                 <p>{% trans "No staff members yet" %}</p>
                 <ion-button href="{% url 'staff:staff_create' %}" size="small">
                     {% trans "Add First Staff Member" %}

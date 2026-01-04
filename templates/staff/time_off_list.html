@@ -69,13 +69,13 @@
                         hx-post="{% url 'staff:time_off_approve' request.id %}"
                         hx-target="closest ion-item-sliding"
                         hx-swap="outerHTML">
-                        <ion-icon slot="icon-only" name="checkmark-outline"></ion-icon>
+                        {% icon "checkmark-outline" %}
                     </ion-item-option>
                     <ion-item-option color="danger"
                         hx-post="{% url 'staff:time_off_reject' request.id %}"
                         hx-target="closest ion-item-sliding"
                         hx-swap="outerHTML">
-                        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+                        {% icon "close-outline" %}
                     </ion-item-option>
                 </ion-item-options>
                 {% endif %}
@@ -84,7 +84,7 @@
         </ion-list>
         {% else %}
         <div class="empty-state">
-            <ion-icon name="calendar-outline"></ion-icon>
+            {% icon "calendar-outline" %}
             <h3>{% trans "No Time Off Requests" %}</h3>
             <p>{% trans "Time off requests will appear here" %}</p>
         </div>

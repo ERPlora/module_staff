@@ -9,7 +9,7 @@
     <ion-title>{% trans "Staff Roles" %}</ion-title>
     <ion-buttons slot="end">
         <ion-button id="add-role-btn">
-            <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+            {% icon "add-outline" %}
         </ion-button>
     </ion-buttons>
 </ion-toolbar>
@@ -38,14 +38,14 @@
 
                 <ion-item-options side="end">
                     <ion-item-option color="primary" onclick="editRole({{ role.id }}, '{{ role.name }}', '{{ role.description|default:'' }}')">
-                        <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+                        {% icon "create-outline" %}
                     </ion-item-option>
                     <ion-item-option color="danger"
                         hx-delete="{% url 'staff:role_delete' role.id %}"
                         hx-confirm="{% trans 'Delete this role?' %}"
                         hx-target="closest ion-item-sliding"
                         hx-swap="outerHTML">
-                        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+                        {% icon "trash-outline" %}
                     </ion-item-option>
                 </ion-item-options>
             </ion-item-sliding>
@@ -53,11 +53,11 @@
         </ion-list>
         {% else %}
         <div class="empty-state">
-            <ion-icon name="shield-outline"></ion-icon>
+            {% icon "shield-outline" %}
             <h3>{% trans "No Roles" %}</h3>
             <p>{% trans "Create roles to organize your staff" %}</p>
             <ion-button id="add-first-role-btn">
-                <ion-icon slot="start" name="add-outline"></ion-icon>
+                {% icon "add-outline" %}
                 {% trans "Add Role" %}
             </ion-button>
         </div>
