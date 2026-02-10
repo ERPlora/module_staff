@@ -1,81 +1,53 @@
-{% load i18n %}
+{% load i18n djicons %}
 
-{% if staff_list %}
-<ion-list>
-    {% for member in staff_list %}
-    <ion-item-sliding>
-        <ion-item href="{% url 'staff:staff_detail' member.id %}" detail>
-            <ion-avatar slot="start">
-                {% if member.photo %}
-                <img src="{{ member.photo.url }}" alt="{{ member.full_name }}">
-                {% else %}
-                <ion-icon name="person-circle-outline" style="font-size: 40px; color: var(--ion-color-medium);"></ion-icon>
-                {% endif %}
-            </ion-avatar>
-            <ion-label>
-                <h2>{{ member.full_name }}</h2>
-                <p>{{ member.role.name|default:"-" }}{% if member.employee_id %} · {{ member.employee_id }}{% endif %}</p>
-                {% if member.phone %}
-                <p class="text-muted">{{ member.phone }}</p>
-                {% endif %}
-            </ion-label>
-            <div slot="end" class="item-end-content">
-                {% if member.is_bookable %}
-                <ion-icon name="calendar-outline" color="primary" title="{% trans 'Bookable' %}"></ion-icon>
-                {% endif %}
-                <ion-badge color="{% if member.status == 'active' %}success{% elif member.status == 'on_leave' %}warning{% elif member.status == 'inactive' %}medium{% else %}danger{% endif %}">
-                    {{ member.get_status_display }}
-                </ion-badge>
+{% if staff_members %}
+<div class="list">
+    {% for member in staff_members %}
+    <a hx-get="{% url 'staff:detail' member.id %}"
+       hx-target="#main-content-area"
+       hx-push-url="true"
+       class="list-item list-item-clickable">
+        <div class="list-item-start">
+            {% if member.photo %}
+            <img src="{{ member.photo.url }}" alt="{{ member.full_name }}"
+                 class="w-10 h-10 rounded-full object-cover">
+            {% else %}
+            <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <span class="text-sm font-semibold text-primary">{{ member.first_name|first }}{{ member.last_name|first }}</span>
             </div>
-        </ion-item>
-
-        <ion-item-options side="end">
-            <ion-item-option color="primary" href="{% url 'staff:staff_edit' member.id %}">
-                {% icon "create-outline" %}
-            </ion-item-option>
-            <ion-item-option color="danger"
-                hx-delete="{% url 'staff:staff_delete' member.id %}"
-                hx-confirm="{% trans 'Delete this staff member?' %}"
-                hx-target="closest ion-item-sliding"
-                hx-swap="outerHTML">
-                {% icon "trash-outline" %}
-            </ion-item-option>
-        </ion-item-options>
-    </ion-item-sliding>
+            {% endif %}
+        </div>
+        <div class="list-item-content">
+            <div class="list-item-label">
+                {{ member.full_name }}
+                {% if member.is_bookable %}
+                <span class="text-primary ml-1" title="{% trans 'Bookable' %}">{% icon "calendar-outline" css_class="text-sm" %}</span>
+                {% endif %}
+            </div>
+            <div class="list-item-note">
+                {{ member.role.name|default:"-" }}
+                {% if member.employee_id %} &middot; {{ member.employee_id }}{% endif %}
+                {% if member.phone %} &middot; {{ member.phone }}{% endif %}
+            </div>
+        </div>
+        <div class="list-item-end">
+            <span class="badge badge-sm color-{% if member.status == 'active' %}success{% elif member.status == 'on_leave' %}warning{% elif member.status == 'inactive' %}medium{% else %}error{% endif %}">
+                {{ member.get_status_display }}
+            </span>
+        </div>
+    </a>
     {% endfor %}
-</ion-list>
+</div>
 {% else %}
-<div class="empty-state">
-    {% icon "people-outline" %}
-    <h3>{% trans "No Staff Members" %}</h3>
-    <p>{% trans "Add your first staff member to get started" %}</p>
-    <ion-button href="{% url 'staff:staff_create' %}">
-        {% icon "add-outline" %}
+<div class="text-center py-12 text-muted">
+    {% icon "people-outline" css_class="text-5xl block mx-auto mb-2" %}
+    <p class="mt-2">{% trans "No staff members found" %}</p>
+    <button class="btn btn-sm color-primary mt-3"
+            hx-get="{% url 'staff:create' %}"
+            hx-target="#main-content-area"
+            hx-push-url="true">
+        {% icon "add-outline" css_class="mr-1" %}
         {% trans "Add Staff Member" %}
-    </ion-button>
+    </button>
 </div>
 {% endif %}
-
-<style>
-.item-end-content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 48px 16px;
-    color: var(--ion-color-medium);
-}
-
-.empty-state ion-icon {
-    font-size: 64px;
-    margin-bottom: 16px;
-}
-
-.empty-state h3 {
-    margin: 0 0 8px;
-    color: var(--ion-text-color);
-}
-</style>

@@ -1,27 +1,49 @@
-"""
-Views for the staff module.
-"""
+"""Staff module views."""
+
 import json
-from datetime import datetime, date, time
-from decimal import Decimal
-from django.shortcuts import render, get_object_or_404
+from datetime import datetime, date, time, timedelta
+
+from django.db.models import Q, Count, Sum
 from django.http import JsonResponse
+from django.template.loader import render_to_string
+from django.utils import timezone
 from django.views.decorators.http import require_POST, require_GET
-from django.db.models import Q
 
 from apps.accounts.decorators import login_required
-from apps.modules_runtime.decorators import module_view
+from apps.core.htmx import htmx_view
+from apps.modules_runtime.navigation import with_module_nav
 
 from .models import (
-    StaffConfig,
+    StaffSettings,
     StaffRole,
     StaffMember,
     StaffSchedule,
     StaffWorkingHours,
     StaffTimeOff,
-    StaffService as StaffServiceModel,
+    StaffService,
 )
-from .services import StaffServiceLayer
+from .forms import (
+    StaffMemberForm,
+    StaffRoleForm,
+    StaffScheduleForm,
+    StaffTimeOffForm,
+    StaffSettingsForm,
+)
+
+
+def _hub(request):
+    return request.session.get('hub_id')
+
+
+def _employee(request):
+    from apps.accounts.models import LocalUser
+    uid = request.session.get('local_user_id')
+    if uid:
+        try:
+            return LocalUser.objects.get(pk=uid)
+        except LocalUser.DoesNotExist:
+            pass
+    return None
 
 
 # =============================================================================
@@ -29,12 +51,35 @@ from .services import StaffServiceLayer
 # =============================================================================
 
 @login_required
-@module_view("staff", "dashboard")
+@with_module_nav('staff', 'dashboard')
+@htmx_view('staff/pages/index.html', 'staff/partials/dashboard.html')
+def index(request):
+    return _dashboard_context(request)
+
+
+@login_required
+@with_module_nav('staff', 'dashboard')
+@htmx_view('staff/pages/index.html', 'staff/partials/dashboard.html')
 def dashboard(request):
-    """Staff dashboard with statistics."""
-    stats = StaffServiceLayer.get_staff_stats()
-    recent_staff = StaffMember.objects.filter(status='active').order_by('-created_at')[:5]
-    pending_time_off = StaffTimeOff.objects.filter(status='pending').order_by('start_date')[:5]
+    return _dashboard_context(request)
+
+
+def _dashboard_context(request):
+    hub = _hub(request)
+    members = StaffMember.objects.filter(hub_id=hub, is_deleted=False)
+
+    stats = {
+        'total': members.count(),
+        'active': members.filter(status='active').count(),
+        'bookable': members.filter(status='active', is_bookable=True).count(),
+        'on_leave': members.filter(status='on_leave').count(),
+        'roles': StaffRole.objects.filter(hub_id=hub, is_deleted=False, is_active=True).count(),
+    }
+
+    recent_staff = members.filter(status='active').order_by('-created_at')[:5]
+    pending_time_off = StaffTimeOff.objects.filter(
+        hub_id=hub, is_deleted=False, status='pending'
+    ).select_related('staff').order_by('start_date')[:5]
 
     return {
         'stats': stats,
@@ -48,177 +93,130 @@ def dashboard(request):
 # =============================================================================
 
 @login_required
-@module_view("staff", "list")
+@with_module_nav('staff', 'list')
+@htmx_view('staff/pages/list.html', 'staff/partials/list.html')
 def staff_list(request):
-    """List all staff members."""
-    search = request.GET.get('search', '')
-    role_id = request.GET.get('role')
+    hub = _hub(request)
+    search = request.GET.get('q', '')
+    role_id = request.GET.get('role', '')
     status = request.GET.get('status', 'active')
 
-    staff_members = StaffServiceLayer.search_staff(
-        query=search,
-        role_id=int(role_id) if role_id else None,
-        status=status if status != 'all' else None,
-    )
+    members = StaffMember.objects.filter(
+        hub_id=hub, is_deleted=False
+    ).select_related('role')
 
-    roles = StaffRole.objects.filter(is_active=True).order_by('name')
+    if search:
+        members = members.filter(
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(email__icontains=search) |
+            Q(phone__icontains=search) |
+            Q(employee_id__icontains=search)
+        )
+
+    if status and status != 'all':
+        members = members.filter(status=status)
+
+    if role_id:
+        members = members.filter(role_id=role_id)
+
+    roles = StaffRole.objects.filter(
+        hub_id=hub, is_deleted=False, is_active=True
+    ).order_by('order', 'name')
 
     return {
-        'staff_members': staff_members,
+        'staff_members': members,
         'roles': roles,
         'search': search,
         'selected_role': role_id,
-        'status': status,
+        'selected_status': status,
     }
 
 
 @login_required
+@with_module_nav('staff', 'list')
+@htmx_view('staff/pages/create.html', 'staff/partials/form.html')
 def staff_create(request):
-    """Create a new staff member."""
+    hub = _hub(request)
+
     if request.method == 'POST':
-        try:
-            if request.content_type == 'application/json':
-                data = json.loads(request.body)
-            else:
-                data = request.POST.dict()
+        form = StaffMemberForm(request.POST, request.FILES)
+        if form.is_valid():
+            member = form.save(commit=False)
+            member.hub_id = hub
+            member.save()
+            return JsonResponse({'success': True, 'id': str(member.pk)})
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
-            hire_date = None
-            if data.get('hire_date'):
-                hire_date = datetime.strptime(data['hire_date'], '%Y-%m-%d').date()
+    form = StaffMemberForm()
+    form.fields['role'].queryset = StaffRole.objects.filter(
+        hub_id=hub, is_deleted=False, is_active=True
+    )
 
-            staff, error = StaffServiceLayer.create_staff_member(
-                first_name=data.get('first_name', ''),
-                last_name=data.get('last_name', ''),
-                email=data.get('email', ''),
-                phone=data.get('phone', ''),
-                role_id=int(data['role_id']) if data.get('role_id') else None,
-                hire_date=hire_date,
-                bio=data.get('bio', ''),
-                specialties=data.get('specialties', ''),
-                is_bookable=data.get('is_bookable', 'true') in ['true', True, '1', 1],
-                hourly_rate=Decimal(data.get('hourly_rate', '0')),
-                commission_rate=Decimal(data.get('commission_rate', '0')),
-                color=data.get('color', ''),
-                booking_buffer=int(data.get('booking_buffer', 0)),
-                notes=data.get('notes', ''),
-            )
-
-            if error:
-                return JsonResponse({'success': False, 'error': error}, status=400)
-
-            return JsonResponse({'success': True, 'id': staff.id})
-
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
-    roles = StaffRole.objects.filter(is_active=True).order_by('name')
-
-    return render(request, 'staff/staff_form.html', {
-        'mode': 'create',
-        'roles': roles,
-    })
+    return {'form': form, 'mode': 'create'}
 
 
 @login_required
+@with_module_nav('staff', 'list')
+@htmx_view('staff/pages/detail.html', 'staff/partials/detail.html')
 def staff_detail(request, pk):
-    """Staff member detail view."""
-    staff = get_object_or_404(StaffMember, pk=pk)
-    schedule_summary = StaffServiceLayer.get_staff_schedule_summary(staff)
-    services = staff.staff_services.filter(is_active=True)
-    recent_time_off = staff.time_off.order_by('-start_date')[:5]
+    hub = _hub(request)
+    member = StaffMember.objects.select_related('role', 'user').get(
+        pk=pk, hub_id=hub, is_deleted=False
+    )
+    services = member.staff_services.filter(is_deleted=False, is_active=True)
+    schedules = member.schedules.filter(is_deleted=False)
+    recent_time_off = member.time_off.filter(is_deleted=False).order_by('-start_date')[:5]
 
-    return render(request, 'staff/staff_detail.html', {
-        'staff': staff,
-        'schedule_summary': schedule_summary,
+    return {
+        'staff': member,
         'services': services,
+        'schedules': schedules,
         'recent_time_off': recent_time_off,
-    })
+    }
 
 
 @login_required
+@with_module_nav('staff', 'list')
+@htmx_view('staff/pages/edit.html', 'staff/partials/form.html')
 def staff_edit(request, pk):
-    """Edit a staff member."""
-    staff = get_object_or_404(StaffMember, pk=pk)
+    hub = _hub(request)
+    member = StaffMember.objects.get(pk=pk, hub_id=hub, is_deleted=False)
 
     if request.method == 'POST':
-        try:
-            if request.content_type == 'application/json':
-                data = json.loads(request.body)
-            else:
-                data = request.POST.dict()
-
-            kwargs = {}
-            if 'first_name' in data:
-                kwargs['first_name'] = data['first_name']
-            if 'last_name' in data:
-                kwargs['last_name'] = data['last_name']
-            if 'email' in data:
-                kwargs['email'] = data['email']
-            if 'phone' in data:
-                kwargs['phone'] = data['phone']
-            if 'role_id' in data:
-                kwargs['role_id'] = int(data['role_id']) if data['role_id'] else None
-            if 'bio' in data:
-                kwargs['bio'] = data['bio']
-            if 'specialties' in data:
-                kwargs['specialties'] = data['specialties']
-            if 'is_bookable' in data:
-                kwargs['is_bookable'] = data['is_bookable'] in ['true', True, '1', 1]
-            if 'hourly_rate' in data:
-                kwargs['hourly_rate'] = Decimal(data['hourly_rate'])
-            if 'commission_rate' in data:
-                kwargs['commission_rate'] = Decimal(data['commission_rate'])
-            if 'color' in data:
-                kwargs['color'] = data['color']
-            if 'booking_buffer' in data:
-                kwargs['booking_buffer'] = int(data['booking_buffer'])
-            if 'notes' in data:
-                kwargs['notes'] = data['notes']
-            if 'status' in data:
-                kwargs['status'] = data['status']
-            if 'hire_date' in data and data['hire_date']:
-                kwargs['hire_date'] = datetime.strptime(data['hire_date'], '%Y-%m-%d').date()
-
-            success, error = StaffServiceLayer.update_staff_member(staff, **kwargs)
-
-            if not success:
-                return JsonResponse({'success': False, 'error': error}, status=400)
-
+        form = StaffMemberForm(request.POST, request.FILES, instance=member)
+        if form.is_valid():
+            form.save()
             return JsonResponse({'success': True})
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    form = StaffMemberForm(instance=member)
+    form.fields['role'].queryset = StaffRole.objects.filter(
+        hub_id=hub, is_deleted=False, is_active=True
+    )
 
-    roles = StaffRole.objects.filter(is_active=True).order_by('name')
-
-    return render(request, 'staff/staff_form.html', {
-        'mode': 'edit',
-        'staff': staff,
-        'roles': roles,
-    })
+    return {'form': form, 'staff': member, 'mode': 'edit'}
 
 
 @login_required
 @require_POST
 def staff_delete(request, pk):
-    """Delete a staff member."""
-    staff = get_object_or_404(StaffMember, pk=pk)
-    success, error = StaffServiceLayer.delete_staff_member(staff)
-
-    if not success:
-        return JsonResponse({'success': False, 'error': error}, status=400)
-
+    hub = _hub(request)
+    member = StaffMember.objects.get(pk=pk, hub_id=hub, is_deleted=False)
+    member.is_deleted = True
+    member.deleted_at = timezone.now()
+    member.save(update_fields=['is_deleted', 'deleted_at', 'updated_at'])
     return JsonResponse({'success': True})
 
 
 @login_required
 @require_POST
 def staff_toggle(request, pk):
-    """Toggle staff bookable status."""
-    staff = get_object_or_404(StaffMember, pk=pk)
-    is_bookable = StaffServiceLayer.toggle_staff_bookable(staff)
-
-    return JsonResponse({'success': True, 'is_bookable': is_bookable})
+    hub = _hub(request)
+    member = StaffMember.objects.get(pk=pk, hub_id=hub, is_deleted=False)
+    member.is_bookable = not member.is_bookable
+    member.save(update_fields=['is_bookable', 'updated_at'])
+    return JsonResponse({'success': True, 'is_bookable': member.is_bookable})
 
 
 # =============================================================================
@@ -226,131 +224,121 @@ def staff_toggle(request, pk):
 # =============================================================================
 
 @login_required
-@module_view("staff", "schedules")
+@with_module_nav('staff', 'schedules')
+@htmx_view('staff/pages/schedules.html', 'staff/partials/schedules.html')
 def schedule_list(request):
-    """List all staff schedules."""
-    staff_members = StaffMember.objects.filter(status='active').prefetch_related('schedules')
+    hub = _hub(request)
+    members = StaffMember.objects.filter(
+        hub_id=hub, is_deleted=False, status='active'
+    ).prefetch_related('schedules')
 
-    return {
-        'staff_members': staff_members,
-    }
+    return {'staff_members': members}
 
 
 @login_required
 def schedule_create(request, staff_pk):
-    """Create a schedule for staff member."""
-    staff = get_object_or_404(StaffMember, pk=staff_pk)
+    hub = _hub(request)
+    member = StaffMember.objects.get(pk=staff_pk, hub_id=hub, is_deleted=False)
 
     if request.method == 'POST':
-        try:
-            if request.content_type == 'application/json':
-                data = json.loads(request.body)
-            else:
-                data = request.POST.dict()
+        form = StaffScheduleForm(request.POST)
+        if form.is_valid():
+            schedule = form.save(commit=False)
+            schedule.hub_id = hub
+            schedule.staff = member
+            schedule.save()
+            return JsonResponse({'success': True, 'id': str(schedule.pk)})
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
-            schedule, error = StaffServiceLayer.create_schedule(
-                staff=staff,
-                name=data.get('name', 'New Schedule'),
-                is_default=data.get('is_default', 'false') in ['true', True, '1', 1],
-            )
-
-            if error:
-                return JsonResponse({'success': False, 'error': error}, status=400)
-
-            return JsonResponse({'success': True, 'id': schedule.id})
-
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
-    return render(request, 'staff/schedule_form.html', {
-        'mode': 'create',
-        'staff': staff,
-    })
+    form = StaffScheduleForm()
+    html = render_to_string('staff/partials/_schedule_form.html', {'form': form, 'staff': member}, request=request)
+    return JsonResponse({'form_html': html})
 
 
 @login_required
+@with_module_nav('staff', 'schedules')
+@htmx_view('staff/pages/schedule_detail.html', 'staff/partials/schedule_detail.html')
 def schedule_detail(request, pk):
-    """Schedule detail with working hours."""
-    schedule = get_object_or_404(StaffSchedule, pk=pk)
-    working_hours = schedule.working_hours.all()
+    hub = _hub(request)
+    schedule = StaffSchedule.objects.select_related('staff').get(
+        pk=pk, hub_id=hub, is_deleted=False
+    )
+    working_hours = schedule.working_hours.filter(is_deleted=False)
 
-    return render(request, 'staff/schedule_detail.html', {
+    return {
         'schedule': schedule,
         'working_hours': working_hours,
-    })
+        'staff': schedule.staff,
+    }
 
 
 @login_required
 def schedule_edit(request, pk):
-    """Edit a schedule."""
-    schedule = get_object_or_404(StaffSchedule, pk=pk)
+    hub = _hub(request)
+    schedule = StaffSchedule.objects.get(pk=pk, hub_id=hub, is_deleted=False)
 
     if request.method == 'POST':
-        try:
-            if request.content_type == 'application/json':
-                data = json.loads(request.body)
-            else:
-                data = request.POST.dict()
-
-            success, error = StaffServiceLayer.update_schedule(
-                schedule,
-                name=data.get('name', schedule.name),
-                is_default=data.get('is_default', 'false') in ['true', True, '1', 1],
-            )
-
-            if not success:
-                return JsonResponse({'success': False, 'error': error}, status=400)
-
+        form = StaffScheduleForm(request.POST, instance=schedule)
+        if form.is_valid():
+            form.save()
             return JsonResponse({'success': True})
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
-    return render(request, 'staff/schedule_form.html', {
-        'mode': 'edit',
-        'schedule': schedule,
-        'staff': schedule.staff,
-    })
+    form = StaffScheduleForm(instance=schedule)
+    html = render_to_string('staff/partials/_schedule_form.html', {'form': form, 'schedule': schedule, 'staff': schedule.staff}, request=request)
+    return JsonResponse({'form_html': html})
 
 
 @login_required
 @require_POST
 def schedule_delete(request, pk):
-    """Delete a schedule."""
-    schedule = get_object_or_404(StaffSchedule, pk=pk)
-    success, error = StaffServiceLayer.delete_schedule(schedule)
-
-    if not success:
-        return JsonResponse({'success': False, 'error': error}, status=400)
-
+    hub = _hub(request)
+    schedule = StaffSchedule.objects.get(pk=pk, hub_id=hub, is_deleted=False)
+    schedule.is_deleted = True
+    schedule.deleted_at = timezone.now()
+    schedule.save(update_fields=['is_deleted', 'deleted_at', 'updated_at'])
     return JsonResponse({'success': True})
 
 
 @login_required
 @require_POST
 def working_hours_save(request, schedule_pk):
-    """Save working hours for a schedule."""
-    schedule = get_object_or_404(StaffSchedule, pk=schedule_pk)
+    """Save working hours for a schedule (bulk)."""
+    hub = _hub(request)
+    schedule = StaffSchedule.objects.get(pk=schedule_pk, hub_id=hub, is_deleted=False)
 
     try:
         data = json.loads(request.body)
         hours_data = data.get('hours', [])
 
-        # Convert time strings to time objects
+        # Delete existing and recreate
+        schedule.working_hours.filter(is_deleted=False).delete()
+
         for h in hours_data:
-            if 'start_time' in h and isinstance(h['start_time'], str):
-                h['start_time'] = datetime.strptime(h['start_time'], '%H:%M').time()
-            if 'end_time' in h and isinstance(h['end_time'], str):
-                h['end_time'] = datetime.strptime(h['end_time'], '%H:%M').time()
-            if h.get('break_start') and isinstance(h['break_start'], str):
-                h['break_start'] = datetime.strptime(h['break_start'], '%H:%M').time()
-            if h.get('break_end') and isinstance(h['break_end'], str):
-                h['break_end'] = datetime.strptime(h['break_end'], '%H:%M').time()
+            start_time = h.get('start_time')
+            end_time = h.get('end_time')
+            if isinstance(start_time, str):
+                start_time = datetime.strptime(start_time, '%H:%M').time()
+            if isinstance(end_time, str):
+                end_time = datetime.strptime(end_time, '%H:%M').time()
 
-        success, error = StaffServiceLayer.save_working_hours(schedule, hours_data)
+            break_start = h.get('break_start')
+            break_end = h.get('break_end')
+            if break_start and isinstance(break_start, str):
+                break_start = datetime.strptime(break_start, '%H:%M').time()
+            if break_end and isinstance(break_end, str):
+                break_end = datetime.strptime(break_end, '%H:%M').time()
 
-        if not success:
-            return JsonResponse({'success': False, 'error': error}, status=400)
+            StaffWorkingHours.objects.create(
+                hub_id=hub,
+                schedule=schedule,
+                day_of_week=int(h['day_of_week']),
+                start_time=start_time,
+                end_time=end_time,
+                break_start=break_start or None,
+                break_end=break_end or None,
+                is_working=h.get('is_working', True),
+            )
 
         return JsonResponse({'success': True})
 
@@ -363,118 +351,101 @@ def working_hours_save(request, schedule_pk):
 # =============================================================================
 
 @login_required
+@with_module_nav('staff', 'list')
+@htmx_view('staff/pages/time_off.html', 'staff/partials/time_off_list.html')
 def time_off_list(request, staff_pk):
-    """List time off for a staff member."""
-    staff = get_object_or_404(StaffMember, pk=staff_pk)
-    time_off = staff.time_off.order_by('-start_date')
+    hub = _hub(request)
+    member = StaffMember.objects.get(pk=staff_pk, hub_id=hub, is_deleted=False)
+    time_off = member.time_off.filter(is_deleted=False).order_by('-start_date')
 
-    return render(request, 'staff/time_off_list.html', {
-        'staff': staff,
+    return {
+        'staff': member,
         'time_off': time_off,
-    })
+    }
 
 
 @login_required
 def time_off_create(request, staff_pk):
-    """Create time off request."""
-    staff = get_object_or_404(StaffMember, pk=staff_pk)
+    hub = _hub(request)
+    member = StaffMember.objects.get(pk=staff_pk, hub_id=hub, is_deleted=False)
 
     if request.method == 'POST':
-        try:
-            if request.content_type == 'application/json':
-                data = json.loads(request.body)
-            else:
-                data = request.POST.dict()
+        form = StaffTimeOffForm(request.POST)
+        if form.is_valid():
+            time_off = form.save(commit=False)
+            time_off.hub_id = hub
+            time_off.staff = member
+            time_off.save()
+            return JsonResponse({'success': True, 'id': str(time_off.pk)})
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
-            start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
-            end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
-
-            time_off, error = StaffServiceLayer.create_time_off(
-                staff=staff,
-                start_date=start_date,
-                end_date=end_date,
-                leave_type=data.get('leave_type', 'vacation'),
-                reason=data.get('reason', ''),
-                is_full_day=data.get('is_full_day', 'true') in ['true', True, '1', 1],
-            )
-
-            if error:
-                return JsonResponse({'success': False, 'error': error}, status=400)
-
-            return JsonResponse({'success': True, 'id': time_off.id})
-
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
-    return render(request, 'staff/time_off_form.html', {
-        'mode': 'create',
-        'staff': staff,
-    })
+    form = StaffTimeOffForm()
+    html = render_to_string('staff/partials/_time_off_form.html', {'form': form, 'staff': member}, request=request)
+    return JsonResponse({'form_html': html})
 
 
 @login_required
 def time_off_edit(request, pk):
-    """Edit time off request."""
-    time_off = get_object_or_404(StaffTimeOff, pk=pk)
+    hub = _hub(request)
+    time_off = StaffTimeOff.objects.get(pk=pk, hub_id=hub, is_deleted=False)
 
     if request.method == 'POST':
-        try:
-            if request.content_type == 'application/json':
-                data = json.loads(request.body)
-            else:
-                data = request.POST.dict()
-
-            kwargs = {}
-            if 'start_date' in data:
-                kwargs['start_date'] = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
-            if 'end_date' in data:
-                kwargs['end_date'] = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
-            if 'leave_type' in data:
-                kwargs['leave_type'] = data['leave_type']
-            if 'reason' in data:
-                kwargs['reason'] = data['reason']
-
-            success, error = StaffServiceLayer.update_time_off(time_off, **kwargs)
-
-            if not success:
-                return JsonResponse({'success': False, 'error': error}, status=400)
-
+        form = StaffTimeOffForm(request.POST, instance=time_off)
+        if form.is_valid():
+            form.save()
             return JsonResponse({'success': True})
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
-    return render(request, 'staff/time_off_form.html', {
-        'mode': 'edit',
-        'time_off': time_off,
-        'staff': time_off.staff,
-    })
+    form = StaffTimeOffForm(instance=time_off)
+    html = render_to_string('staff/partials/_time_off_form.html', {'form': form, 'time_off': time_off, 'staff': time_off.staff}, request=request)
+    return JsonResponse({'form_html': html})
 
 
 @login_required
 @require_POST
 def time_off_delete(request, pk):
-    """Delete time off request."""
-    time_off = get_object_or_404(StaffTimeOff, pk=pk)
-    success, error = StaffServiceLayer.delete_time_off(time_off)
-
-    if not success:
-        return JsonResponse({'success': False, 'error': error}, status=400)
-
+    hub = _hub(request)
+    time_off = StaffTimeOff.objects.get(pk=pk, hub_id=hub, is_deleted=False)
+    time_off.is_deleted = True
+    time_off.deleted_at = timezone.now()
+    time_off.save(update_fields=['is_deleted', 'deleted_at', 'updated_at'])
     return JsonResponse({'success': True})
 
 
 @login_required
 @require_POST
 def time_off_approve(request, pk):
-    """Approve time off request."""
-    time_off = get_object_or_404(StaffTimeOff, pk=pk)
-    user_id = request.session.get('local_user_id', 1)
-    success, error = StaffServiceLayer.approve_time_off(time_off, user_id)
+    hub = _hub(request)
+    time_off = StaffTimeOff.objects.get(pk=pk, hub_id=hub, is_deleted=False)
 
-    if not success:
-        return JsonResponse({'success': False, 'error': error}, status=400)
+    if time_off.status != 'pending':
+        return JsonResponse(
+            {'success': False, 'error': f'Cannot approve: status is {time_off.status}'},
+            status=400
+        )
 
+    employee = _employee(request)
+    time_off.status = 'approved'
+    time_off.approved_by = employee
+    time_off.approved_at = timezone.now()
+    time_off.save(update_fields=['status', 'approved_by', 'approved_at', 'updated_at'])
+    return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
+def time_off_reject(request, pk):
+    hub = _hub(request)
+    time_off = StaffTimeOff.objects.get(pk=pk, hub_id=hub, is_deleted=False)
+
+    if time_off.status != 'pending':
+        return JsonResponse(
+            {'success': False, 'error': f'Cannot reject: status is {time_off.status}'},
+            status=400
+        )
+
+    time_off.status = 'rejected'
+    time_off.save(update_fields=['status', 'updated_at'])
     return JsonResponse({'success': True})
 
 
@@ -483,31 +454,45 @@ def time_off_approve(request, pk):
 # =============================================================================
 
 @login_required
+@with_module_nav('staff', 'list')
+@htmx_view('staff/pages/staff_services.html', 'staff/partials/staff_services.html')
 def staff_services(request, staff_pk):
-    """Manage services for staff member."""
-    staff = get_object_or_404(StaffMember, pk=staff_pk)
-    services = staff.staff_services.all()
+    hub = _hub(request)
+    member = StaffMember.objects.get(pk=staff_pk, hub_id=hub, is_deleted=False)
+    services = member.staff_services.filter(is_deleted=False)
 
-    return render(request, 'staff/staff_services.html', {
-        'staff': staff,
+    return {
+        'staff': member,
         'services': services,
-    })
+    }
 
 
 @login_required
 @require_POST
 def staff_services_save(request, staff_pk):
-    """Save staff services."""
-    staff = get_object_or_404(StaffMember, pk=staff_pk)
+    """Save staff service assignments (bulk)."""
+    hub = _hub(request)
+    member = StaffMember.objects.get(pk=staff_pk, hub_id=hub, is_deleted=False)
 
     try:
         data = json.loads(request.body)
         service_data = data.get('services', [])
 
-        success, error = StaffServiceLayer.assign_services(staff, service_data)
+        # Remove existing assignments
+        member.staff_services.filter(is_deleted=False).delete()
 
-        if not success:
-            return JsonResponse({'success': False, 'error': error}, status=400)
+        for s in service_data:
+            service_id = s.get('service_id')
+            StaffService.objects.create(
+                hub_id=hub,
+                staff=member,
+                service_id=service_id if service_id else None,
+                service_name=s.get('service_name', ''),
+                custom_duration=s.get('custom_duration') or None,
+                custom_price=s.get('custom_price') or None,
+                is_primary=s.get('is_primary', False),
+                is_active=s.get('is_active', True),
+            )
 
         return JsonResponse({'success': True})
 
@@ -520,95 +505,71 @@ def staff_services_save(request, staff_pk):
 # =============================================================================
 
 @login_required
+@with_module_nav('staff', 'roles')
+@htmx_view('staff/pages/roles.html', 'staff/partials/roles.html')
 def role_list(request):
-    """List all roles."""
-    roles = StaffRole.objects.all().order_by('order', 'name')
+    hub = _hub(request)
+    roles = StaffRole.objects.filter(
+        hub_id=hub, is_deleted=False
+    ).annotate(
+        member_count=Count(
+            'members',
+            filter=Q(members__is_deleted=False)
+        )
+    ).order_by('order', 'name')
 
-    return render(request, 'staff/role_list.html', {
-        'roles': roles,
-    })
+    return {'roles': roles}
 
 
 @login_required
-def role_create(request):
-    """Create a role."""
+def role_add(request):
+    hub = _hub(request)
+
     if request.method == 'POST':
-        try:
-            if request.content_type == 'application/json':
-                data = json.loads(request.body)
-            else:
-                data = request.POST.dict()
+        form = StaffRoleForm(request.POST)
+        if form.is_valid():
+            role = form.save(commit=False)
+            role.hub_id = hub
+            role.save()
+            return JsonResponse({'success': True, 'id': str(role.pk)})
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
-            role, error = StaffServiceLayer.create_role(
-                name=data.get('name', ''),
-                description=data.get('description', ''),
-                color=data.get('color', ''),
-                order=int(data.get('order', 0)),
-            )
-
-            if error:
-                return JsonResponse({'success': False, 'error': error}, status=400)
-
-            return JsonResponse({'success': True, 'id': role.id})
-
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
-    return render(request, 'staff/role_form.html', {
-        'mode': 'create',
-    })
+    form = StaffRoleForm()
+    html = render_to_string('staff/partials/_role_form.html', {'form': form}, request=request)
+    return JsonResponse({'form_html': html})
 
 
 @login_required
 def role_edit(request, pk):
-    """Edit a role."""
-    role = get_object_or_404(StaffRole, pk=pk)
+    hub = _hub(request)
+    role = StaffRole.objects.get(pk=pk, hub_id=hub, is_deleted=False)
 
     if request.method == 'POST':
-        try:
-            if request.content_type == 'application/json':
-                data = json.loads(request.body)
-            else:
-                data = request.POST.dict()
-
-            kwargs = {}
-            if 'name' in data:
-                kwargs['name'] = data['name']
-            if 'description' in data:
-                kwargs['description'] = data['description']
-            if 'color' in data:
-                kwargs['color'] = data['color']
-            if 'order' in data:
-                kwargs['order'] = int(data['order'])
-            if 'is_active' in data:
-                kwargs['is_active'] = data['is_active'] in ['true', True, '1', 1]
-
-            success, error = StaffServiceLayer.update_role(role, **kwargs)
-
-            if not success:
-                return JsonResponse({'success': False, 'error': error}, status=400)
-
+        form = StaffRoleForm(request.POST, instance=role)
+        if form.is_valid():
+            form.save()
             return JsonResponse({'success': True})
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
-    return render(request, 'staff/role_form.html', {
-        'mode': 'edit',
-        'role': role,
-    })
+    form = StaffRoleForm(instance=role)
+    html = render_to_string('staff/partials/_role_form.html', {'form': form, 'role': role}, request=request)
+    return JsonResponse({'form_html': html})
 
 
 @login_required
 @require_POST
 def role_delete(request, pk):
-    """Delete a role."""
-    role = get_object_or_404(StaffRole, pk=pk)
-    success, error = StaffServiceLayer.delete_role(role)
+    hub = _hub(request)
+    role = StaffRole.objects.get(pk=pk, hub_id=hub, is_deleted=False)
 
-    if not success:
-        return JsonResponse({'success': False, 'error': error}, status=400)
+    # Unassign members from this role
+    StaffMember.objects.filter(
+        hub_id=hub, role=role, is_deleted=False
+    ).update(role=None)
 
+    role.is_deleted = True
+    role.deleted_at = timezone.now()
+    role.save(update_fields=['is_deleted', 'deleted_at', 'updated_at'])
     return JsonResponse({'success': True})
 
 
@@ -617,67 +578,86 @@ def role_delete(request, pk):
 # =============================================================================
 
 @login_required
-@module_view("staff", "settings")
-def settings_view(request):
-    """Settings page."""
-    config = StaffConfig.get_config()
-    return {'config': config}
+@with_module_nav('staff', 'settings')
+@htmx_view('staff/pages/settings.html', 'staff/partials/settings.html')
+def settings(request):
+    hub = _hub(request)
+    staff_settings = StaffSettings.get_settings(hub)
+    form = StaffSettingsForm(instance=staff_settings)
+    return {'settings': staff_settings, 'form': form}
 
 
 @login_required
 @require_POST
 def settings_save(request):
-    """Save settings."""
-    config = StaffConfig.get_config()
-
-    try:
-        if request.content_type == 'application/json':
-            data = json.loads(request.body)
-        else:
-            data = request.POST.dict()
-
-        if 'default_work_start' in data:
-            config.default_work_start = datetime.strptime(data['default_work_start'], '%H:%M').time()
-        if 'default_work_end' in data:
-            config.default_work_end = datetime.strptime(data['default_work_end'], '%H:%M').time()
-        if 'default_break_duration' in data:
-            config.default_break_duration = int(data['default_break_duration'])
-        if 'min_advance_booking' in data:
-            config.min_advance_booking = int(data['min_advance_booking'])
-        if 'max_daily_hours' in data:
-            config.max_daily_hours = int(data['max_daily_hours'])
-        if 'overtime_threshold' in data:
-            config.overtime_threshold = int(data['overtime_threshold'])
-
-        config.save()
+    hub = _hub(request)
+    staff_settings = StaffSettings.get_settings(hub)
+    form = StaffSettingsForm(request.POST, instance=staff_settings)
+    if form.is_valid():
+        form.save()
         return JsonResponse({'success': True})
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
 
 @login_required
 @require_POST
 def settings_toggle(request):
-    """Toggle boolean settings."""
-    config = StaffConfig.get_config()
-    field = request.POST.get('field')
+    hub = _hub(request)
+    staff_settings = StaffSettings.get_settings(hub)
+    field = request.POST.get('field', '')
 
-    toggleable_fields = [
-        'show_staff_photos',
-        'show_staff_bio',
-        'allow_staff_selection',
-        'notify_new_appointment',
-        'notify_cancellation',
+    toggleable = [
+        'show_staff_photos', 'show_staff_bio', 'allow_staff_selection',
+        'notify_new_appointment', 'notify_cancellation',
     ]
 
-    if field not in toggleable_fields:
+    if field not in toggleable:
         return JsonResponse({'success': False, 'error': 'Invalid field'}, status=400)
 
-    setattr(config, field, not getattr(config, field))
-    config.save()
+    setattr(staff_settings, field, not getattr(staff_settings, field))
+    staff_settings.save(update_fields=[field, 'updated_at'])
+    return JsonResponse({'success': True, 'value': getattr(staff_settings, field)})
 
-    return JsonResponse({'success': True, 'value': getattr(config, field)})
+
+@login_required
+@require_POST
+def settings_input(request):
+    hub = _hub(request)
+    staff_settings = StaffSettings.get_settings(hub)
+    field = request.POST.get('field', '')
+    value = request.POST.get('value', '')
+
+    input_fields = {
+        'default_work_start': lambda v: datetime.strptime(v, '%H:%M').time(),
+        'default_work_end': lambda v: datetime.strptime(v, '%H:%M').time(),
+        'default_break_duration': int,
+        'min_advance_booking': int,
+        'max_daily_hours': int,
+        'overtime_threshold': int,
+    }
+
+    if field not in input_fields:
+        return JsonResponse({'success': False, 'error': 'Invalid field'}, status=400)
+
+    try:
+        parsed = input_fields[field](value)
+        setattr(staff_settings, field, parsed)
+        staff_settings.save(update_fields=[field, 'updated_at'])
+        return JsonResponse({'success': True})
+    except (ValueError, TypeError) as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def settings_reset(request):
+    hub = _hub(request)
+    staff_settings = StaffSettings.get_settings(hub)
+    defaults = StaffSettings()
+    for f in StaffSettingsForm.Meta.fields:
+        setattr(staff_settings, f, getattr(defaults, f))
+    staff_settings.save()
+    return JsonResponse({'success': True})
 
 
 # =============================================================================
@@ -687,25 +667,28 @@ def settings_toggle(request):
 @login_required
 @require_GET
 def api_search(request):
-    """Search staff API."""
+    hub = _hub(request)
     query = request.GET.get('q', '')
-    limit = int(request.GET.get('limit', 20))
+    limit = min(int(request.GET.get('limit', 20)), 50)
 
-    staff_members = StaffServiceLayer.search_staff(
-        query=query,
-        status='active',
-    )[:limit]
+    if len(query) < 2:
+        return JsonResponse({'results': []})
 
-    results = [
-        {
-            'id': s.id,
-            'name': s.full_name,
-            'role': s.role.name if s.role else None,
-            'is_bookable': s.is_bookable,
-            'color': s.color,
-        }
-        for s in staff_members
-    ]
+    members = StaffMember.objects.filter(
+        hub_id=hub, is_deleted=False, status='active'
+    ).filter(
+        Q(first_name__icontains=query) |
+        Q(last_name__icontains=query) |
+        Q(email__icontains=query)
+    ).select_related('role')[:limit]
+
+    results = [{
+        'id': str(m.pk),
+        'name': m.full_name,
+        'role': m.role.name if m.role else None,
+        'is_bookable': m.is_bookable,
+        'color': m.color,
+    } for m in members]
 
     return JsonResponse({'results': results})
 
@@ -713,7 +696,8 @@ def api_search(request):
 @login_required
 @require_GET
 def api_available(request):
-    """Get available staff at datetime."""
+    """Get available staff at a specific datetime."""
+    hub = _hub(request)
     datetime_str = request.GET.get('datetime')
     service_id = request.GET.get('service_id')
 
@@ -725,20 +709,62 @@ def api_available(request):
     except ValueError:
         return JsonResponse({'error': 'Invalid datetime format'}, status=400)
 
-    available = StaffServiceLayer.get_available_staff(
-        target_dt,
-        service_id=int(service_id) if service_id else None,
-    )
+    target_date = target_dt.date()
+    target_time = target_dt.time()
+    day_of_week = target_date.weekday()
 
-    results = [
-        {
-            'id': s.id,
-            'name': s.full_name,
-            'role': s.role.name if s.role else None,
-            'color': s.color,
-        }
-        for s in available
-    ]
+    # Get active bookable staff
+    members = StaffMember.objects.filter(
+        hub_id=hub, is_deleted=False,
+        status='active', is_bookable=True,
+    ).select_related('role')
+
+    # Filter by service if provided
+    if service_id:
+        members = members.filter(
+            staff_services__service_id=service_id,
+            staff_services__is_active=True,
+            staff_services__is_deleted=False,
+        )
+
+    available = []
+    for member in members:
+        # Check time off
+        has_time_off = member.time_off.filter(
+            is_deleted=False,
+            status__in=['pending', 'approved'],
+            start_date__lte=target_date,
+            end_date__gte=target_date,
+        ).exists()
+        if has_time_off:
+            continue
+
+        # Check working hours
+        schedule = member.schedules.filter(
+            is_deleted=False, is_active=True
+        ).filter(
+            Q(effective_from__isnull=True) | Q(effective_from__lte=target_date),
+            Q(effective_until__isnull=True) | Q(effective_until__gte=target_date),
+        ).order_by('-is_default').first()
+
+        if schedule:
+            hours = schedule.working_hours.filter(
+                is_deleted=False, day_of_week=day_of_week, is_working=True
+            ).first()
+            if hours:
+                if hours.start_time <= target_time <= hours.end_time:
+                    # Check not during break
+                    if hours.break_start and hours.break_end:
+                        if hours.break_start <= target_time <= hours.break_end:
+                            continue
+                    available.append(member)
+
+    results = [{
+        'id': str(m.pk),
+        'name': m.full_name,
+        'role': m.role.name if m.role else None,
+        'color': m.color,
+    } for m in available]
 
     return JsonResponse({'available': results})
 
@@ -746,8 +772,9 @@ def api_available(request):
 @login_required
 @require_GET
 def api_staff_schedule(request, pk):
-    """Get staff schedule for a date."""
-    staff = get_object_or_404(StaffMember, pk=pk)
+    """Get available time slots for a staff member on a date."""
+    hub = _hub(request)
+    member = StaffMember.objects.get(pk=pk, hub_id=hub, is_deleted=False)
     date_str = request.GET.get('date')
 
     if date_str:
@@ -758,15 +785,42 @@ def api_staff_schedule(request, pk):
     duration = int(request.GET.get('duration', 60))
     interval = int(request.GET.get('interval', 15))
 
-    slots = StaffServiceLayer.get_available_slots(
-        staff,
-        target_date,
-        duration_minutes=duration,
-        slot_interval=interval,
-    )
+    # Find applicable schedule
+    schedule = member.schedules.filter(
+        is_deleted=False, is_active=True
+    ).filter(
+        Q(effective_from__isnull=True) | Q(effective_from__lte=target_date),
+        Q(effective_until__isnull=True) | Q(effective_until__gte=target_date),
+    ).order_by('-is_default').first()
+
+    slots = []
+    if schedule:
+        day_of_week = target_date.weekday()
+        hours = schedule.working_hours.filter(
+            is_deleted=False, day_of_week=day_of_week, is_working=True
+        ).first()
+
+        if hours:
+            current = datetime.combine(target_date, hours.start_time)
+            end = datetime.combine(target_date, hours.end_time)
+            slot_duration = timedelta(minutes=duration)
+            slot_interval = timedelta(minutes=interval)
+
+            while current + slot_duration <= end:
+                slot_time = current.time()
+
+                # Skip break time
+                if hours.break_start and hours.break_end:
+                    slot_end_time = (current + slot_duration).time()
+                    if not (slot_end_time <= hours.break_start or slot_time >= hours.break_end):
+                        current += slot_interval
+                        continue
+
+                slots.append(slot_time.strftime('%H:%M'))
+                current += slot_interval
 
     return JsonResponse({
-        'staff_id': staff.id,
+        'staff_id': str(member.pk),
         'date': target_date.isoformat(),
-        'slots': [s.strftime('%H:%M') for s in slots],
+        'slots': slots,
     })

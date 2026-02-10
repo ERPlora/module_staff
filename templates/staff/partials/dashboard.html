@@ -1,0 +1,225 @@
+{% load i18n djicons %}
+
+<div class="p-4">
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div class="card">
+            <div class="card-body flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    {% icon "people-outline" css_class="text-xl text-primary" %}
+                </div>
+                <div>
+                    <div class="text-2xl font-bold">{{ stats.total }}</div>
+                    <div class="text-xs text-muted">{% trans "Total Staff" %}</div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+                    {% icon "checkmark-circle-outline" css_class="text-xl text-success" %}
+                </div>
+                <div>
+                    <div class="text-2xl font-bold">{{ stats.active }}</div>
+                    <div class="text-xs text-muted">{% trans "Active" %}</div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center">
+                    {% icon "calendar-outline" css_class="text-xl text-warning" %}
+                </div>
+                <div>
+                    <div class="text-2xl font-bold">{{ stats.bookable }}</div>
+                    <div class="text-xs text-muted">{% trans "Bookable" %}</div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center">
+                    {% icon "airplane-outline" css_class="text-xl text-error" %}
+                </div>
+                <div>
+                    <div class="text-2xl font-bold">{{ stats.on_leave }}</div>
+                    <div class="text-xs text-muted">{% trans "On Leave" %}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% icon "flash-outline" css_class="text-primary" %} {% trans "Quick Actions" %}</h3>
+        </div>
+        <div class="list">
+            <a hx-get="{% url 'staff:create' %}"
+               hx-target="#main-content-area"
+               hx-push-url="true"
+               class="list-item list-item-clickable">
+                <div class="list-item-start">{% icon "person-add-outline" css_class="text-primary" %}</div>
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "Add Staff Member" %}</div>
+                    <div class="list-item-note">{% trans "Create a new staff profile" %}</div>
+                </div>
+                <div class="list-item-end">{% icon "chevron-forward-outline" css_class="text-muted" %}</div>
+            </a>
+            <a hx-get="{% url 'staff:role_list' %}"
+               hx-target="#main-content-area"
+               hx-push-url="true"
+               class="list-item list-item-clickable">
+                <div class="list-item-start">{% icon "shield-outline" css_class="text-warning" %}</div>
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "Manage Roles" %}</div>
+                    <div class="list-item-note">{{ stats.roles }} {% trans "roles configured" %}</div>
+                </div>
+                <div class="list-item-end">{% icon "chevron-forward-outline" css_class="text-muted" %}</div>
+            </a>
+            <a hx-get="{% url 'staff:schedules' %}"
+               hx-target="#main-content-area"
+               hx-push-url="true"
+               class="list-item list-item-clickable">
+                <div class="list-item-start">{% icon "time-outline" css_class="text-success" %}</div>
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "Schedules" %}</div>
+                    <div class="list-item-note">{% trans "Manage staff working hours" %}</div>
+                </div>
+                <div class="list-item-end">{% icon "chevron-forward-outline" css_class="text-muted" %}</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Staff Members -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "Recent Staff Members" %}</h3>
+            <button class="btn btn-sm btn-ghost"
+                    hx-get="{% url 'staff:list' %}"
+                    hx-target="#main-content-area"
+                    hx-push-url="true">
+                {% trans "View All" %}
+            </button>
+        </div>
+        <div class="card-body p-0">
+            {% if recent_staff %}
+            <div class="list">
+                {% for member in recent_staff %}
+                <a hx-get="{% url 'staff:detail' member.id %}"
+                   hx-target="#main-content-area"
+                   hx-push-url="true"
+                   class="list-item list-item-clickable">
+                    <div class="list-item-start">
+                        {% if member.photo %}
+                        <img src="{{ member.photo.url }}" alt="{{ member.full_name }}"
+                             class="w-10 h-10 rounded-full object-cover">
+                        {% else %}
+                        <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span class="text-sm font-semibold text-primary">{{ member.first_name|first }}{{ member.last_name|first }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="list-item-content">
+                        <div class="list-item-label">{{ member.full_name }}</div>
+                        <div class="list-item-note">{{ member.role.name|default:"-" }}</div>
+                    </div>
+                    <div class="list-item-end">
+                        <span class="badge badge-sm color-{% if member.status == 'active' %}success{% elif member.status == 'on_leave' %}warning{% elif member.status == 'inactive' %}medium{% else %}error{% endif %}">
+                            {{ member.get_status_display }}
+                        </span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12 text-muted">
+                {% icon "people-outline" css_class="text-5xl block mx-auto mb-2" %}
+                <p class="mt-2">{% trans "No staff members yet" %}</p>
+                <button class="btn btn-sm color-primary mt-3"
+                        hx-get="{% url 'staff:create' %}"
+                        hx-target="#main-content-area"
+                        hx-push-url="true">
+                    {% icon "add-outline" css_class="mr-1" %}
+                    {% trans "Add First Staff Member" %}
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pending Time Off Requests -->
+    {% if pending_time_off %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% icon "hourglass-outline" css_class="text-warning" %} {% trans "Pending Time Off Requests" %}</h3>
+        </div>
+        <div class="card-body p-0">
+            <div class="list">
+                {% for item in pending_time_off %}
+                <div class="list-item" id="time-off-{{ item.id }}">
+                    <div class="list-item-start">
+                        {% if item.staff.photo %}
+                        <img src="{{ item.staff.photo.url }}" alt="{{ item.staff.full_name }}"
+                             class="w-10 h-10 rounded-full object-cover">
+                        {% else %}
+                        <div class="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center">
+                            <span class="text-sm font-semibold text-warning">{{ item.staff.first_name|first }}{{ item.staff.last_name|first }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="list-item-content">
+                        <div class="list-item-label">{{ item.staff.full_name }}</div>
+                        <div class="list-item-note">
+                            {{ item.start_date|date:"M d" }} - {{ item.end_date|date:"M d, Y" }}
+                            &middot; {{ item.get_leave_type_display }}
+                        </div>
+                    </div>
+                    <div class="list-item-end flex items-center gap-2">
+                        <button class="btn color-success btn-sm"
+                                onclick="approveTimeOff('{{ item.id }}', this)">
+                            {% icon "checkmark-outline" %}
+                        </button>
+                        <button class="btn btn-sm btn-outline color-error"
+                                onclick="rejectTimeOff('{{ item.id }}', this)">
+                            {% icon "close-outline" %}
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+async function approveTimeOff(id, btn) {
+    try {
+        const li = btn.closest('.list-item');
+        const response = await fetch('{% url "staff:time_off_approve" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'}
+        });
+        if (response.ok) {
+            li.style.opacity = '0.5';
+            setTimeout(function() { li.remove(); }, 300);
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function rejectTimeOff(id, btn) {
+    if (!confirm('{% trans "Reject this time off request?" %}')) return;
+    try {
+        const li = btn.closest('.list-item');
+        const response = await fetch('{% url "staff:time_off_reject" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'}
+        });
+        if (response.ok) {
+            li.style.opacity = '0.5';
+            setTimeout(function() { li.remove(); }, 300);
+        }
+    } catch (e) { console.error(e); }
+}
+</script>

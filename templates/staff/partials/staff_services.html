@@ -1,0 +1,58 @@
+{% load i18n djicons %}
+
+<div class="p-4">
+    <!-- Back Button -->
+    <button class="btn btn-ghost mb-3"
+            hx-get="{% url 'staff:detail' staff.id %}"
+            hx-target="#main-content-area"
+            hx-push-url="true">
+        {% icon "arrow-back-outline" css_class="mr-1" %}
+        {% trans "Back to Profile" %}
+    </button>
+
+    <!-- Services List -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "Assigned Services" %}</h3>
+            <span class="badge color-primary">{{ services|length }}</span>
+        </div>
+        <div class="card-body p-0">
+            {% if services %}
+            <div class="list">
+                {% for service in services %}
+                <div class="list-item">
+                    <div class="list-item-start">
+                        <div class="w-10 h-10 rounded-lg bg-{% if service.is_primary %}primary{% else %}success{% endif %}/10 flex items-center justify-center">
+                            {% icon "briefcase-outline" css_class="text-xl text-{% if service.is_primary %}primary{% else %}success{% endif %}" %}
+                        </div>
+                    </div>
+                    <div class="list-item-content">
+                        <div class="list-item-label">{{ service.service_name }}</div>
+                        <div class="list-item-note">
+                            {% if service.custom_duration %}{{ service.custom_duration }} {% trans "min" %}{% endif %}
+                            {% if service.custom_duration and service.custom_price %} &middot; {% endif %}
+                            {% if service.custom_price %}{{ service.custom_price }}{% endif %}
+                            {% if not service.custom_duration and not service.custom_price %}{% trans "Default settings" %}{% endif %}
+                        </div>
+                    </div>
+                    <div class="list-item-end flex items-center gap-2">
+                        {% if service.is_primary %}
+                        <span class="badge badge-sm color-primary">{% trans "Primary" %}</span>
+                        {% endif %}
+                        <span class="badge badge-sm color-{% if service.is_active %}success{% else %}medium{% endif %}">
+                            {% if service.is_active %}{% trans "Active" %}{% else %}{% trans "Inactive" %}{% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12 text-muted">
+                {% icon "briefcase-outline" css_class="text-5xl block mx-auto mb-2" %}
+                <p class="mt-2">{% trans "No services assigned" %}</p>
+                <p class="text-sm">{% trans "Assign services to define what this staff member can do" %}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

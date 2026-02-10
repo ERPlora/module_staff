@@ -1,0 +1,362 @@
+{% load i18n djicons %}
+
+<div class="p-4">
+    <!-- Back Button -->
+    <button class="btn btn-ghost mb-3"
+            hx-get="{% url 'staff:list' %}"
+            hx-target="#main-content-area"
+            hx-push-url="true">
+        {% icon "arrow-back-outline" css_class="mr-1" %}
+        {% trans "Back to Staff" %}
+    </button>
+
+    <!-- Profile Header Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    {% if staff.photo %}
+                    <img src="{{ staff.photo.url }}" alt="{{ staff.full_name }}"
+                         class="w-14 h-14 rounded-full object-cover">
+                    {% else %}
+                    <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span class="text-xl font-semibold text-primary">{{ staff.first_name|first }}{{ staff.last_name|first }}</span>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h2 class="text-xl font-bold">{{ staff.full_name }}</h2>
+                        <span class="text-muted">{{ staff.role.name|default:"-" }}</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="badge color-{% if staff.status == 'active' %}success{% elif staff.status == 'on_leave' %}warning{% elif staff.status == 'inactive' %}medium{% else %}error{% endif %}">
+                        {{ staff.get_status_display }}
+                    </span>
+                    <button class="btn btn-sm btn-outline"
+                            hx-get="{% url 'staff:edit' staff.id %}"
+                            hx-target="#main-content-area"
+                            hx-push-url="true">
+                        {% icon "create-outline" css_class="mr-1" %}
+                        {% trans "Edit" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div class="p-3 rounded-lg bg-base-100">
+                    <div class="text-xs text-muted uppercase font-semibold mb-1">{% trans "Status" %}</div>
+                    <div class="text-lg font-semibold">{{ staff.get_status_display }}</div>
+                </div>
+                <div class="p-3 rounded-lg bg-base-100">
+                    <div class="text-xs text-muted uppercase font-semibold mb-1">{% trans "Bookable" %}</div>
+                    <div class="text-lg font-semibold">{% if staff.is_bookable %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</div>
+                </div>
+                <div class="p-3 rounded-lg bg-base-100">
+                    <div class="text-xs text-muted uppercase font-semibold mb-1">{% trans "Hourly Rate" %}</div>
+                    <div class="text-lg font-semibold">{% if staff.hourly_rate %}{{ staff.hourly_rate }}{% else %}-{% endif %}</div>
+                </div>
+                <div class="p-3 rounded-lg bg-base-100">
+                    <div class="text-xs text-muted uppercase font-semibold mb-1">{% trans "Commission" %}</div>
+                    <div class="text-lg font-semibold">{% if staff.commission_rate %}{{ staff.commission_rate }}%{% else %}-{% endif %}</div>
+                </div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="flex flex-wrap gap-2">
+                {% if staff.phone %}
+                <a href="tel:{{ staff.phone }}" class="btn btn-sm btn-outline">
+                    {% icon "call-outline" css_class="mr-1" %}
+                    {% trans "Call" %}
+                </a>
+                {% endif %}
+                {% if staff.email %}
+                <a href="mailto:{{ staff.email }}" class="btn btn-sm btn-outline">
+                    {% icon "mail-outline" css_class="mr-1" %}
+                    {% trans "Email" %}
+                </a>
+                {% endif %}
+                <button class="btn btn-sm btn-outline"
+                        hx-get="{% url 'staff:time_off_list' staff.id %}"
+                        hx-target="#main-content-area"
+                        hx-push-url="true">
+                    {% icon "airplane-outline" css_class="mr-1" %}
+                    {% trans "Time Off" %}
+                </button>
+                <button class="btn btn-sm btn-outline"
+                        hx-get="{% url 'staff:staff_services' staff.id %}"
+                        hx-target="#main-content-area"
+                        hx-push-url="true">
+                    {% icon "briefcase-outline" css_class="mr-1" %}
+                    {% trans "Services" %}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Information -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "Contact Information" %}</h3>
+        </div>
+        <div class="card-body p-0">
+            <div class="list">
+                {% if staff.email %}
+                <div class="list-item">
+                    <div class="list-item-start">{% icon "mail-outline" css_class="text-primary" %}</div>
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Email" %}</div>
+                    </div>
+                    <div class="list-item-end text-muted">{{ staff.email }}</div>
+                </div>
+                {% endif %}
+                {% if staff.phone %}
+                <div class="list-item">
+                    <div class="list-item-start">{% icon "call-outline" css_class="text-primary" %}</div>
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Phone" %}</div>
+                    </div>
+                    <div class="list-item-end text-muted">{{ staff.phone }}</div>
+                </div>
+                {% endif %}
+                {% if staff.employee_id %}
+                <div class="list-item">
+                    <div class="list-item-start">{% icon "id-card-outline" css_class="text-primary" %}</div>
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Employee ID" %}</div>
+                    </div>
+                    <div class="list-item-end text-muted">{{ staff.employee_id }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Employment Details -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "Employment Details" %}</h3>
+        </div>
+        <div class="card-body p-0">
+            <div class="list">
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Role" %}</div>
+                    </div>
+                    <div class="list-item-end text-muted">{{ staff.role.name|default:"-" }}</div>
+                </div>
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Hire Date" %}</div>
+                    </div>
+                    <div class="list-item-end text-muted">{{ staff.hire_date|date:"M d, Y"|default:"-" }}</div>
+                </div>
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Years of Service" %}</div>
+                    </div>
+                    <div class="list-item-end text-muted">{{ staff.years_of_service }}</div>
+                </div>
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Booking Buffer" %}</div>
+                    </div>
+                    <div class="list-item-end text-muted">{{ staff.booking_buffer }} {% trans "min" %}</div>
+                </div>
+                {% if staff.color %}
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Calendar Color" %}</div>
+                    </div>
+                    <div class="list-item-end">
+                        <div class="w-6 h-6 rounded-full" style="background-color: {{ staff.color }};"></div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Assigned Services -->
+    {% if services %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "Assigned Services" %}</h3>
+            <button class="btn btn-sm btn-ghost"
+                    hx-get="{% url 'staff:staff_services' staff.id %}"
+                    hx-target="#main-content-area"
+                    hx-push-url="true">
+                {% trans "Manage" %}
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="list">
+                {% for service in services %}
+                <div class="list-item">
+                    <div class="list-item-start">
+                        <div class="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+                            {% icon "briefcase-outline" css_class="text-success" %}
+                        </div>
+                    </div>
+                    <div class="list-item-content">
+                        <div class="list-item-label">{{ service.service_name }}</div>
+                        <div class="list-item-note">
+                            {% if service.custom_duration %}{{ service.custom_duration }} {% trans "min" %}{% endif %}
+                            {% if service.custom_price %} &middot; {{ service.custom_price }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="list-item-end">
+                        {% if service.is_primary %}
+                        <span class="badge badge-sm color-primary">{% trans "Primary" %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Schedules -->
+    {% if schedules %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "Schedules" %}</h3>
+        </div>
+        <div class="card-body p-0">
+            <div class="list">
+                {% for schedule in schedules %}
+                <a hx-get="{% url 'staff:schedule_detail' schedule.id %}"
+                   hx-target="#main-content-area"
+                   hx-push-url="true"
+                   class="list-item list-item-clickable">
+                    <div class="list-item-start">{% icon "calendar-outline" css_class="text-primary" %}</div>
+                    <div class="list-item-content">
+                        <div class="list-item-label">{{ schedule.name }}</div>
+                        <div class="list-item-note">
+                            {% if schedule.is_default %}{% trans "Default" %}{% endif %}
+                            {% if schedule.effective_from %} {% trans "From" %} {{ schedule.effective_from|date:"M d, Y" }}{% endif %}
+                            {% if schedule.effective_until %} {% trans "Until" %} {{ schedule.effective_until|date:"M d, Y" }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="list-item-end">
+                        <span class="badge badge-sm color-{% if schedule.is_active %}success{% else %}medium{% endif %}">
+                            {% if schedule.is_active %}{% trans "Active" %}{% else %}{% trans "Inactive" %}{% endif %}
+                        </span>
+                        {% icon "chevron-forward-outline" css_class="text-muted ml-2" %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Bio -->
+    {% if staff.bio %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "Bio" %}</h3>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">{{ staff.bio }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Specialties -->
+    {% if staff.specialties %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "Specialties" %}</h3>
+        </div>
+        <div class="card-body">
+            <div class="flex flex-wrap gap-2">
+                {% for specialty in staff.get_specialties_list %}
+                <span class="badge color-primary badge-sm">{{ specialty }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Time Off -->
+    {% if recent_time_off %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "Recent Time Off" %}</h3>
+            <button class="btn btn-sm btn-ghost"
+                    hx-get="{% url 'staff:time_off_list' staff.id %}"
+                    hx-target="#main-content-area"
+                    hx-push-url="true">
+                {% trans "View All" %}
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="list">
+                {% for item in recent_time_off %}
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{{ item.get_leave_type_display }}</div>
+                        <div class="list-item-note">{{ item.start_date|date:"M d" }} - {{ item.end_date|date:"M d, Y" }} ({{ item.duration_days }} {% trans "days" %})</div>
+                    </div>
+                    <div class="list-item-end">
+                        <span class="badge badge-sm color-{% if item.status == 'approved' %}success{% elif item.status == 'rejected' %}error{% elif item.status == 'pending' %}warning{% else %}medium{% endif %}">
+                            {{ item.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Notes -->
+    {% if staff.notes %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "Internal Notes" %}</h3>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">{{ staff.notes }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Danger Zone -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title text-error">{% trans "Danger Zone" %}</h3>
+        </div>
+        <div class="card-body">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 class="font-semibold">{% trans "Delete Staff Member" %}</h4>
+                    <p class="text-sm text-muted">{% trans "This action cannot be undone" %}</p>
+                </div>
+                <button class="btn btn-sm btn-outline color-error"
+                        onclick="deleteStaff('{{ staff.id }}', '{{ staff.full_name|escapejs }}')">
+                    {% icon "trash-outline" css_class="mr-1" %}
+                    {% trans "Delete" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function deleteStaff(id, name) {
+    if (!confirm('{% trans "Are you sure you want to delete" %} "' + name + '"? {% trans "This action cannot be undone." %}')) return;
+    try {
+        const response = await fetch('{% url "staff:delete" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'}
+        });
+        if (response.ok) {
+            htmx.ajax('GET', '{% url "staff:list" %}', {target: '#main-content-area', pushUrl: true});
+        }
+    } catch (e) { console.error(e); }
+}
+</script>

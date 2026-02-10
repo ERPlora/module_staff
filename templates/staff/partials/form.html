@@ -1,0 +1,199 @@
+{% load i18n djicons %}
+
+<div class="p-4">
+    <!-- Back Button -->
+    <button class="btn btn-ghost mb-3"
+            hx-get="{% if mode == 'edit' %}{% url 'staff:detail' staff.id %}{% else %}{% url 'staff:list' %}{% endif %}"
+            hx-target="#main-content-area"
+            hx-push-url="true">
+        {% icon "arrow-back-outline" css_class="mr-1" %}
+        {% if mode == 'edit' %}{% trans "Back to Profile" %}{% else %}{% trans "Back to Staff" %}{% endif %}
+    </button>
+
+    <form id="staff-form" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Personal Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title">{% icon "person-outline" css_class="text-primary" %} {% trans "Personal Information" %}</h3>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "First Name" %} *</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}<p class="text-sm text-error mt-1">{{ form.first_name.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Last Name" %} *</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}<p class="text-sm text-error mt-1">{{ form.last_name.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Email" %}</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<p class="text-sm text-error mt-1">{{ form.email.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Phone" %}</label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}<p class="text-sm text-error mt-1">{{ form.phone.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Employee ID" %}</label>
+                        {{ form.employee_id }}
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Photo" %}</label>
+                        <input type="file" name="photo" accept="image/*" class="input">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employment Details -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title">{% icon "briefcase-outline" css_class="text-warning" %} {% trans "Employment" %}</h3>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Role" %}</label>
+                        {{ form.role }}
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Status" %}</label>
+                        {{ form.status }}
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Hire Date" %}</label>
+                        {{ form.hire_date }}
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Display Order" %}</label>
+                        {{ form.order }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title">{% icon "calendar-outline" css_class="text-success" %} {% trans "Booking" %}</h3>
+            </div>
+            <div class="list">
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Available for Bookings" %}</div>
+                        <div class="list-item-note">{% trans "Can be booked for appointments" %}</div>
+                    </div>
+                    <div class="list-item-end">
+                        <label class="toggle">
+                            <input type="checkbox" name="is_bookable" {% if form.is_bookable.value %}checked{% endif %}>
+                            
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Calendar Color" %}</label>
+                        {{ form.color }}
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Booking Buffer (minutes)" %}</label>
+                        {{ form.booking_buffer }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compensation -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title">{% icon "cash-outline" css_class="text-success" %} {% trans "Compensation" %}</h3>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Hourly Rate" %}</label>
+                        {{ form.hourly_rate }}
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Commission Rate (%)" %}</label>
+                        {{ form.commission_rate }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title">{% icon "document-text-outline" css_class="text-muted" %} {% trans "Additional Information" %}</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <label class="form-group-label mb-1">{% trans "Bio" %}</label>
+                    {{ form.bio }}
+                </div>
+                <div class="mb-4">
+                    <label class="form-group-label mb-1">{% trans "Specialties" %}</label>
+                    {{ form.specialties }}
+                    <p class="text-xs text-muted mt-1">{% trans "Comma-separated list of specialties" %}</p>
+                </div>
+                <div>
+                    <label class="form-group-label mb-1">{% trans "Internal Notes" %}</label>
+                    {{ form.notes }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex flex-col gap-2">
+            <button type="button" class="btn btn-block color-primary" onclick="saveStaff()">
+                {% icon "checkmark-outline" css_class="mr-1" %}
+                {% if mode == 'edit' %}{% trans "Update Staff Member" %}{% else %}{% trans "Create Staff Member" %}{% endif %}
+            </button>
+            <button type="button" class="btn btn-outline btn-block"
+                    hx-get="{% if mode == 'edit' %}{% url 'staff:detail' staff.id %}{% else %}{% url 'staff:list' %}{% endif %}"
+                    hx-target="#main-content-area"
+                    hx-push-url="true">
+                {% trans "Cancel" %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+async function saveStaff() {
+    const form = document.getElementById('staff-form');
+    const formData = new FormData(form);
+
+    try {
+        const url = '{% if mode == "edit" %}{% url "staff:edit" staff.id %}{% else %}{% url "staff:create" %}{% endif %}';
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            body: formData
+        });
+        const data = await response.json();
+        if (data.success) {
+            {% if mode == 'edit' %}
+            htmx.ajax('GET', '{% url "staff:detail" staff.id %}', {target: '#main-content-area', pushUrl: true});
+            {% else %}
+            htmx.ajax('GET', '{% url "staff:list" %}', {target: '#main-content-area', pushUrl: true});
+            {% endif %}
+        } else if (data.errors) {
+            // Show first error
+            const firstField = Object.keys(data.errors)[0];
+            const firstError = data.errors[firstField][0];
+            alert(firstField + ': ' + firstError);
+        }
+    } catch (e) { console.error(e); }
+}
+</script>

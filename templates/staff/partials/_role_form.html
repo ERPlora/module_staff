@@ -1,0 +1,10 @@
+{% load i18n %}
+{% for field in form %}
+<div class="mb-4">
+    <label class="form-group-label mb-1">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+    {{ field }}
+    {% if field.errors %}
+    <p class="text-error text-xs mt-1">{{ field.errors.0 }}</p>
+    {% endif %}
+</div>
+{% endfor %}

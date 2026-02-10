@@ -1,0 +1,190 @@
+{% load i18n djicons %}
+
+<div class="p-4">
+    <div class="flex justify-end mb-4">
+        <button class="btn color-primary" id="add-role-btn" onclick="openAddRole()">
+            {% icon "add-outline" css_class="mr-2" %}
+            {% trans "New Role" %}
+        </button>
+    </div>
+
+    <!-- Roles List -->
+    <div class="card">
+        <div class="card-body p-0">
+            {% if roles %}
+            <div class="list" id="roles-list">
+                {% for role in roles %}
+                <div class="list-item" id="role-{{ role.id }}">
+                    <div class="list-item-start">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center"
+                             style="background-color: {{ role.color|default:'var(--color-primary)' }}20;">
+                            {% icon "shield-outline" css_class="text-xl" style=role.color|default:'' %}
+                        </div>
+                    </div>
+                    <div class="list-item-content">
+                        <div class="list-item-label">{{ role.name }}</div>
+                        <div class="list-item-note">
+                            {% if role.description %}{{ role.description|truncatechars:60 }} &middot; {% endif %}
+                            {{ role.member_count }} {% trans "member" %}{{ role.member_count|pluralize }}
+                        </div>
+                    </div>
+                    <div class="list-item-end flex items-center gap-2">
+                        <span class="badge badge-sm color-{% if role.is_active %}success{% else %}medium{% endif %}">
+                            {% if role.is_active %}{% trans "Active" %}{% else %}{% trans "Inactive" %}{% endif %}
+                        </span>
+                        <button class="btn btn-sm btn-ghost"
+                                onclick="openEditRole('{{ role.id }}', '{{ role.name|escapejs }}', '{{ role.description|escapejs }}', '{{ role.color|default:"" }}', {{ role.order }}, {{ role.is_active|yesno:'true,false' }})">
+                            {% icon "create-outline" %}
+                        </button>
+                        <button class="btn btn-sm btn-ghost text-error"
+                                onclick="deleteRole('{{ role.id }}', '{{ role.name|escapejs }}')">
+                            {% icon "trash-outline" %}
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12 text-muted">
+                {% icon "shield-outline" css_class="text-5xl block mx-auto mb-2" %}
+                <p class="mt-2">{% trans "No roles created yet" %}</p>
+                <button class="btn btn-sm color-primary mt-3" onclick="openAddRole()">
+                    {% icon "add-outline" css_class="mr-1" %}
+                    {% trans "Create First Role" %}
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Role Modal -->
+<div id="role-modal" class="modal-backdrop" data-state="closed">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title" id="role-modal-title">{% trans "Add Role" %}</h2>
+            <button class="modal-close" onclick="closeRoleModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="role-form">
+                {% csrf_token %}
+                <input type="hidden" id="role-id" value="">
+                <div class="mb-4">
+                    <label class="form-group-label mb-1">{% trans "Role Name" %} *</label>
+                    <input type="text" id="role-name" class="input" required placeholder="{% trans 'e.g. Stylist, Manager' %}">
+                </div>
+                <div class="mb-4">
+                    <label class="form-group-label mb-1">{% trans "Description" %}</label>
+                    <textarea id="role-description" class="textarea" rows="2" placeholder="{% trans 'Optional description...' %}"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Color" %}</label>
+                        <input type="color" id="role-color" class="input" value="#3b82f6">
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Order" %}</label>
+                        <input type="number" id="role-order" class="input" value="0" min="0">
+                    </div>
+                </div>
+                <div class="list-item px-0">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Active" %}</div>
+                    </div>
+                    <div class="list-item-end">
+                        <label class="toggle color-success">
+                            <input type="checkbox" id="role-active" checked>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeRoleModal()">{% trans "Cancel" %}</button>
+            <button class="btn color-primary" onclick="saveRole()">{% trans "Save" %}</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const roleModal = document.getElementById('role-modal');
+
+function openAddRole() {
+    document.getElementById('role-modal-title').textContent = '{% trans "Add Role" %}';
+    document.getElementById('role-id').value = '';
+    document.getElementById('role-name').value = '';
+    document.getElementById('role-description').value = '';
+    document.getElementById('role-color').value = '#3b82f6';
+    document.getElementById('role-order').value = '0';
+    document.getElementById('role-active').checked = true;
+    roleModal.dataset.state = 'open';
+}
+
+function openEditRole(id, name, desc, color, order, active) {
+    document.getElementById('role-modal-title').textContent = '{% trans "Edit Role" %}';
+    document.getElementById('role-id').value = id;
+    document.getElementById('role-name').value = name;
+    document.getElementById('role-description').value = desc;
+    document.getElementById('role-color').value = color || '#3b82f6';
+    document.getElementById('role-order').value = order;
+    document.getElementById('role-active').checked = active;
+    roleModal.dataset.state = 'open';
+}
+
+function closeRoleModal() {
+    roleModal.dataset.state = 'closed';
+}
+
+roleModal.addEventListener('click', function(e) {
+    if (e.target === roleModal) closeRoleModal();
+});
+
+async function saveRole() {
+    const id = document.getElementById('role-id').value;
+    const name = document.getElementById('role-name').value;
+    if (!name) { alert('{% trans "Name is required" %}'); return; }
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('description', document.getElementById('role-description').value);
+    formData.append('color', document.getElementById('role-color').value);
+    formData.append('order', document.getElementById('role-order').value);
+    if (document.getElementById('role-active').checked) {
+        formData.append('is_active', 'on');
+    }
+
+    try {
+        const url = id
+            ? '{% url "staff:role_edit" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id)
+            : '{% url "staff:role_add" %}';
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            body: formData
+        });
+        const data = await response.json();
+        if (data.success) {
+            closeRoleModal();
+            htmx.ajax('GET', '{% url "staff:role_list" %}', {target: '#main-content-area', pushUrl: false});
+        } else if (data.errors) {
+            const firstField = Object.keys(data.errors)[0];
+            alert(firstField + ': ' + data.errors[firstField][0]);
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function deleteRole(id, name) {
+    if (!confirm('{% trans "Are you sure you want to delete role" %} "' + name + '"?')) return;
+    try {
+        const response = await fetch('{% url "staff:role_delete" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'}
+        });
+        if (response.ok) {
+            const el = document.getElementById('role-' + id);
+            if (el) { el.style.opacity = '0.5'; setTimeout(function() { el.remove(); }, 300); }
+        }
+    } catch (e) { console.error(e); }
+}
+</script>

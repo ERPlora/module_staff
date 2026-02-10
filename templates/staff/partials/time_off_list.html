@@ -1,0 +1,275 @@
+{% load i18n djicons %}
+
+<div class="p-4">
+    <!-- Back Button -->
+    <button class="btn btn-ghost mb-3"
+            hx-get="{% url 'staff:detail' staff.id %}"
+            hx-target="#main-content-area"
+            hx-push-url="true">
+        {% icon "arrow-back-outline" css_class="mr-1" %}
+        {% trans "Back to Profile" %}
+    </button>
+
+    <!-- Time Off List -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "Time Off Requests" %}</h3>
+            <div class="flex items-center gap-2">
+                <span class="badge color-primary">{{ time_off|length }}</span>
+                <button class="btn btn-sm color-primary" onclick="openAddTimeOff()">
+                    {% icon "add-outline" css_class="mr-1" %}
+                    {% trans "Add" %}
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if time_off %}
+            <div class="list">
+                {% for item in time_off %}
+                <div class="list-item" id="timeoff-{{ item.id }}">
+                    <div class="list-item-start">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center
+                            {% if item.leave_type == 'vacation' %}bg-primary/10{% elif item.leave_type == 'sick' %}bg-error/10{% elif item.leave_type == 'personal' %}bg-warning/10{% elif item.leave_type == 'training' %}bg-success/10{% else %}bg-primary/10{% endif %}">
+                            {% if item.leave_type == 'vacation' %}
+                            {% icon "airplane-outline" css_class="text-xl text-primary" %}
+                            {% elif item.leave_type == 'sick' %}
+                            {% icon "medkit-outline" css_class="text-xl text-error" %}
+                            {% elif item.leave_type == 'personal' %}
+                            {% icon "person-outline" css_class="text-xl text-warning" %}
+                            {% elif item.leave_type == 'training' %}
+                            {% icon "school-outline" css_class="text-xl text-success" %}
+                            {% else %}
+                            {% icon "calendar-outline" css_class="text-xl text-primary" %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="list-item-content">
+                        <div class="list-item-label">{{ item.get_leave_type_display }}</div>
+                        <div class="list-item-note">
+                            {{ item.start_date|date:"M d" }} - {{ item.end_date|date:"M d, Y" }}
+                            &middot; {{ item.duration_days }} {% trans "day" %}{{ item.duration_days|pluralize }}
+                            {% if not item.is_full_day %} &middot; {% trans "Partial" %}{% endif %}
+                        </div>
+                        {% if item.reason %}
+                        <div class="text-sm text-muted mt-1">{{ item.reason|truncatechars:80 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="list-item-end flex flex-col items-end gap-2">
+                        <span class="badge badge-sm color-{% if item.status == 'approved' %}success{% elif item.status == 'rejected' %}error{% elif item.status == 'pending' %}warning{% else %}medium{% endif %}">
+                            {{ item.get_status_display }}
+                        </span>
+                        {% if item.status == 'pending' %}
+                        <div class="flex items-center gap-1">
+                            <button class="btn color-success btn-sm"
+                                    onclick="approveTimeOff('{{ item.id }}', this)"
+                                    title="{% trans 'Approve' %}">
+                                {% icon "checkmark-outline" %}
+                            </button>
+                            <button class="btn btn-sm btn-outline color-error"
+                                    onclick="rejectTimeOff('{{ item.id }}', this)"
+                                    title="{% trans 'Reject' %}">
+                                {% icon "close-outline" %}
+                            </button>
+                            <button class="btn btn-sm btn-ghost text-error"
+                                    onclick="deleteTimeOff('{{ item.id }}', this)"
+                                    title="{% trans 'Delete' %}">
+                                {% icon "trash-outline" %}
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12 text-muted">
+                {% icon "airplane-outline" css_class="text-5xl block mx-auto mb-2" %}
+                <p class="mt-2">{% trans "No time off requests" %}</p>
+                <p class="text-sm">{% trans "Time off requests for this staff member will appear here" %}</p>
+                <button class="btn btn-sm color-primary mt-3" onclick="openAddTimeOff()">
+                    {% icon "add-outline" css_class="mr-1" %}
+                    {% trans "Add Time Off" %}
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Time Off Modal -->
+<div id="timeoff-modal" class="modal-backdrop" data-state="closed">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title" id="timeoff-modal-title">{% trans "Add Time Off" %}</h2>
+            <button class="modal-close" onclick="closeTimeOffModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="timeoff-form">
+                {% csrf_token %}
+                <input type="hidden" id="timeoff-id" value="">
+                <div class="mb-4">
+                    <label class="form-group-label mb-1">{% trans "Leave Type" %} *</label>
+                    <select id="timeoff-type" class="select" required>
+                        <option value="vacation">{% trans "Vacation" %}</option>
+                        <option value="sick">{% trans "Sick Leave" %}</option>
+                        <option value="personal">{% trans "Personal" %}</option>
+                        <option value="training">{% trans "Training" %}</option>
+                        <option value="other">{% trans "Other" %}</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Start Date" %} *</label>
+                        <input type="date" id="timeoff-start-date" class="input" required>
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "End Date" %} *</label>
+                        <input type="date" id="timeoff-end-date" class="input" required>
+                    </div>
+                </div>
+                <div class="list-item px-0 mb-4">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Full Day" %}</div>
+                        <div class="list-item-note">{% trans "Uncheck for partial day off" %}</div>
+                    </div>
+                    <div class="list-item-end">
+                        <label class="toggle color-success">
+                            <input type="checkbox" id="timeoff-full-day" checked onchange="togglePartialDay()">
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+                <div id="partial-day-fields" class="grid grid-cols-2 gap-4 mb-4" style="display: none;">
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Start Time" %}</label>
+                        <input type="time" id="timeoff-start-time" class="input">
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "End Time" %}</label>
+                        <input type="time" id="timeoff-end-time" class="input">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-group-label mb-1">{% trans "Reason" %}</label>
+                    <textarea id="timeoff-reason" class="textarea" rows="2" placeholder="{% trans 'Optional reason...' %}"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeTimeOffModal()">{% trans "Cancel" %}</button>
+            <button class="btn color-primary" onclick="saveTimeOff()">{% trans "Save" %}</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const timeoffModal = document.getElementById('timeoff-modal');
+
+function togglePartialDay() {
+    const isFullDay = document.getElementById('timeoff-full-day').checked;
+    document.getElementById('partial-day-fields').style.display = isFullDay ? 'none' : 'grid';
+}
+
+function openAddTimeOff() {
+    document.getElementById('timeoff-modal-title').textContent = '{% trans "Add Time Off" %}';
+    document.getElementById('timeoff-id').value = '';
+    document.getElementById('timeoff-type').value = 'vacation';
+    document.getElementById('timeoff-start-date').value = '';
+    document.getElementById('timeoff-end-date').value = '';
+    document.getElementById('timeoff-full-day').checked = true;
+    document.getElementById('timeoff-start-time').value = '';
+    document.getElementById('timeoff-end-time').value = '';
+    document.getElementById('timeoff-reason').value = '';
+    togglePartialDay();
+    timeoffModal.dataset.state = 'open';
+}
+
+function closeTimeOffModal() {
+    timeoffModal.dataset.state = 'closed';
+}
+
+timeoffModal.addEventListener('click', function(e) {
+    if (e.target === timeoffModal) closeTimeOffModal();
+});
+
+async function saveTimeOff() {
+    const timeoffId = document.getElementById('timeoff-id').value;
+    const startDate = document.getElementById('timeoff-start-date').value;
+    const endDate = document.getElementById('timeoff-end-date').value;
+    if (!startDate || !endDate) { alert('{% trans "Start and end dates are required" %}'); return; }
+
+    const formData = new FormData();
+    formData.append('leave_type', document.getElementById('timeoff-type').value);
+    formData.append('start_date', startDate);
+    formData.append('end_date', endDate);
+    if (document.getElementById('timeoff-full-day').checked) {
+        formData.append('is_full_day', 'on');
+    } else {
+        const startTime = document.getElementById('timeoff-start-time').value;
+        const endTime = document.getElementById('timeoff-end-time').value;
+        if (startTime) formData.append('start_time', startTime);
+        if (endTime) formData.append('end_time', endTime);
+    }
+    const reason = document.getElementById('timeoff-reason').value;
+    if (reason) formData.append('reason', reason);
+
+    try {
+        const url = timeoffId
+            ? '{% url "staff:time_off_edit" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', timeoffId)
+            : '{% url "staff:time_off_create" staff.id %}';
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            body: formData
+        });
+        const data = await response.json();
+        if (data.success) {
+            closeTimeOffModal();
+            htmx.ajax('GET', '{% url "staff:time_off_list" staff.id %}', {target: '#main-content-area', pushUrl: false});
+        } else if (data.errors) {
+            const firstField = Object.keys(data.errors)[0];
+            alert(firstField + ': ' + data.errors[firstField][0]);
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function approveTimeOff(id, btn) {
+    try {
+        const response = await fetch('{% url "staff:time_off_approve" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'}
+        });
+        if (response.ok) {
+            htmx.ajax('GET', '{% url "staff:time_off_list" staff.id %}', {target: '#main-content-area'});
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function rejectTimeOff(id, btn) {
+    if (!confirm('{% trans "Reject this time off request?" %}')) return;
+    try {
+        const response = await fetch('{% url "staff:time_off_reject" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'}
+        });
+        if (response.ok) {
+            htmx.ajax('GET', '{% url "staff:time_off_list" staff.id %}', {target: '#main-content-area'});
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function deleteTimeOff(id, btn) {
+    if (!confirm('{% trans "Delete this time off request?" %}')) return;
+    try {
+        const li = btn.closest('.list-item');
+        const response = await fetch('{% url "staff:time_off_delete" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'}
+        });
+        if (response.ok) {
+            li.style.opacity = '0.5';
+            setTimeout(function() { li.remove(); }, 300);
+        }
+    } catch (e) { console.error(e); }
+}
+</script>

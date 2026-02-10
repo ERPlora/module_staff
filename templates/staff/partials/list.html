@@ -1,0 +1,58 @@
+{% load i18n djicons %}
+
+<div class="p-4">
+    <div class="flex justify-end mb-4">
+        <button class="btn color-primary"
+                hx-get="{% url 'staff:create' %}"
+                hx-target="#main-content-area"
+                hx-push-url="true">
+            {% icon "add-outline" css_class="mr-2" %}
+            {% trans "New Staff" %}
+        </button>
+    </div>
+
+    <!-- Search + Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form hx-get="{% url 'staff:list' %}"
+                  hx-target="#main-content-area"
+                  hx-push-url="true"
+                  hx-trigger="submit, change from:select">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="input-group flex-1">
+                        <span class="input-group__start">{% icon "search-outline" %}</span>
+                        <input type="search" name="q" value="{{ search }}"
+                               class="input" placeholder="{% trans 'Search by name, email, phone...' %}"
+                               hx-get="{% url 'staff:list' %}"
+                               hx-trigger="keyup changed delay:300ms"
+                               hx-target="#main-content-area"
+                               hx-include="[name='status'],[name='role']"
+                               hx-push-url="true">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <select name="status" class="select">
+                        <option value="active" {% if selected_status == 'active' %}selected{% endif %}>{% trans "Active" %}</option>
+                        <option value="" {% if selected_status == 'all' or not selected_status %}selected{% endif %}>{% trans "All statuses" %}</option>
+                        <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>{% trans "Inactive" %}</option>
+                        <option value="on_leave" {% if selected_status == 'on_leave' %}selected{% endif %}>{% trans "On Leave" %}</option>
+                        <option value="terminated" {% if selected_status == 'terminated' %}selected{% endif %}>{% trans "Terminated" %}</option>
+                    </select>
+                    <select name="role" class="select">
+                        <option value="">{% trans "All roles" %}</option>
+                        {% for role in roles %}
+                        <option value="{{ role.id }}" {% if selected_role == role.id|slugify %}selected{% endif %}>{{ role.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Staff List -->
+    <div class="card">
+        <div class="card-body p-0">
+            {% include "staff/partials/staff_list_items.html" %}
+        </div>
+    </div>
+</div>

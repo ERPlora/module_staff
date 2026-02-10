@@ -1,0 +1,201 @@
+{% load i18n djicons %}
+
+<div class="p-4">
+    <!-- Staff Schedule List -->
+    {% if staff_members %}
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="list">
+                {% for member in staff_members %}
+                <div class="list-item">
+                    <div class="list-item-start">
+                        {% if member.photo %}
+                        <img src="{{ member.photo.url }}" alt="{{ member.full_name }}"
+                             class="w-10 h-10 rounded-full object-cover">
+                        {% else %}
+                        <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span class="text-sm font-semibold text-primary">{{ member.first_name|first }}{{ member.last_name|first }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="list-item-content">
+                        <div class="list-item-label">{{ member.full_name }}</div>
+                        <div class="list-item-note">
+                            {{ member.role.name|default:"-" }}
+                            &middot;
+                            {% with count=member.schedules.count %}
+                            {% if count %}
+                            {{ count }} {% trans "schedule" %}{{ count|pluralize }}
+                            {% else %}
+                            {% trans "No schedules" %}
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    <div class="list-item-end flex flex-col items-end gap-1">
+                        {% for schedule in member.schedules.all %}
+                        <div class="flex items-center gap-1">
+                            <a hx-get="{% url 'staff:schedule_detail' schedule.id %}"
+                               hx-target="#main-content-area"
+                               hx-push-url="true"
+                               class="btn btn-sm btn-outline">
+                                {{ schedule.name }}
+                                {% if schedule.is_default %}
+                                <span class="badge badge-sm color-primary ml-1">{% trans "Default" %}</span>
+                                {% endif %}
+                            </a>
+                        </div>
+                        {% empty %}
+                        <span class="text-sm text-muted">{% trans "No schedule" %}</span>
+                        {% endfor %}
+                        <button class="btn btn-sm btn-ghost color-primary"
+                                onclick="openAddSchedule('{{ member.id }}', '{{ member.full_name|escapejs }}')">
+                            {% icon "add-outline" css_class="mr-1" %}
+                            {% trans "Add" %}
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body">
+            <div class="text-center py-12 text-muted">
+                {% icon "calendar-outline" css_class="text-5xl block mx-auto mb-2" %}
+                <p class="mt-2">{% trans "No active staff members" %}</p>
+                <p class="text-sm">{% trans "Add active staff members to manage their schedules" %}</p>
+                <button class="btn btn-sm color-primary mt-3"
+                        hx-get="{% url 'staff:create' %}"
+                        hx-target="#main-content-area"
+                        hx-push-url="true">
+                    {% icon "add-outline" css_class="mr-1" %}
+                    {% trans "Add Staff Member" %}
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add/Edit Schedule Modal -->
+<div id="schedule-modal" class="modal-backdrop" data-state="closed">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title" id="schedule-modal-title">{% trans "Add Schedule" %}</h2>
+            <button class="modal-close" onclick="closeScheduleModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="schedule-form">
+                {% csrf_token %}
+                <input type="hidden" id="schedule-staff-pk" value="">
+                <input type="hidden" id="schedule-id" value="">
+                <div class="mb-4">
+                    <label class="form-group-label mb-1">{% trans "Schedule Name" %} *</label>
+                    <input type="text" id="schedule-name" class="input" required placeholder="{% trans 'e.g. Default Schedule, Summer Hours' %}">
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Effective From" %}</label>
+                        <input type="date" id="schedule-from" class="input">
+                    </div>
+                    <div>
+                        <label class="form-group-label mb-1">{% trans "Effective Until" %}</label>
+                        <input type="date" id="schedule-until" class="input">
+                    </div>
+                </div>
+                <div class="list-item px-0">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Default Schedule" %}</div>
+                        <div class="list-item-note">{% trans "Set as the default schedule for this staff member" %}</div>
+                    </div>
+                    <div class="list-item-end">
+                        <label class="toggle color-success">
+                            <input type="checkbox" id="schedule-default">
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="list-item px-0">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Active" %}</div>
+                    </div>
+                    <div class="list-item-end">
+                        <label class="toggle color-success">
+                            <input type="checkbox" id="schedule-active" checked>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeScheduleModal()">{% trans "Cancel" %}</button>
+            <button class="btn color-primary" onclick="saveSchedule()">{% trans "Save" %}</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const scheduleModal = document.getElementById('schedule-modal');
+
+function openAddSchedule(staffPk, staffName) {
+    document.getElementById('schedule-modal-title').textContent = '{% trans "Add Schedule" %} — ' + staffName;
+    document.getElementById('schedule-staff-pk').value = staffPk;
+    document.getElementById('schedule-id').value = '';
+    document.getElementById('schedule-name').value = '';
+    document.getElementById('schedule-from').value = '';
+    document.getElementById('schedule-until').value = '';
+    document.getElementById('schedule-default').checked = false;
+    document.getElementById('schedule-active').checked = true;
+    scheduleModal.dataset.state = 'open';
+}
+
+function closeScheduleModal() {
+    scheduleModal.dataset.state = 'closed';
+}
+
+scheduleModal.addEventListener('click', function(e) {
+    if (e.target === scheduleModal) closeScheduleModal();
+});
+
+async function saveSchedule() {
+    const staffPk = document.getElementById('schedule-staff-pk').value;
+    const scheduleId = document.getElementById('schedule-id').value;
+    const name = document.getElementById('schedule-name').value;
+    if (!name) { alert('{% trans "Name is required" %}'); return; }
+
+    const formData = new FormData();
+    formData.append('name', name);
+    const fromVal = document.getElementById('schedule-from').value;
+    const untilVal = document.getElementById('schedule-until').value;
+    if (fromVal) formData.append('effective_from', fromVal);
+    if (untilVal) formData.append('effective_until', untilVal);
+    if (document.getElementById('schedule-default').checked) {
+        formData.append('is_default', 'on');
+    }
+    if (document.getElementById('schedule-active').checked) {
+        formData.append('is_active', 'on');
+    }
+
+    try {
+        const url = scheduleId
+            ? '{% url "staff:schedule_edit" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', scheduleId)
+            : '{% url "staff:schedule_create" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', staffPk);
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            body: formData
+        });
+        const data = await response.json();
+        if (data.success) {
+            closeScheduleModal();
+            htmx.ajax('GET', '{% url "staff:schedules" %}', {target: '#main-content-area', pushUrl: false});
+        } else if (data.errors) {
+            const firstField = Object.keys(data.errors)[0];
+            alert(firstField + ': ' + data.errors[firstField][0]);
+        }
+    } catch (e) { console.error(e); }
+}
+</script>

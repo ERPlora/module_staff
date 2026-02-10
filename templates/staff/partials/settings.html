@@ -1,0 +1,246 @@
+{% load i18n djicons %}
+
+<div class="p-4">
+    <!-- Default Working Hours -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% icon "time-outline" css_class="text-primary" %} {% trans "Default Working Hours" %}</h3>
+        </div>
+        <div class="list">
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "Work Start Time" %}</div>
+                    <div class="list-item-note">{% trans "Default start time for new schedules" %}</div>
+                </div>
+                <div class="list-item-end">
+                    <input type="time" name="default_work_start"
+                           value="{{ settings.default_work_start|time:'H:i' }}"
+                           class="input input-sm"
+                           style="width: 120px;"
+                           hx-post="{% url 'staff:settings_input' %}"
+                           hx-vals='js:{field: "default_work_start", value: event.target.value}'
+                           hx-trigger="change"
+                           hx-swap="none">
+                </div>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "Work End Time" %}</div>
+                    <div class="list-item-note">{% trans "Default end time for new schedules" %}</div>
+                </div>
+                <div class="list-item-end">
+                    <input type="time" name="default_work_end"
+                           value="{{ settings.default_work_end|time:'H:i' }}"
+                           class="input input-sm"
+                           style="width: 120px;"
+                           hx-post="{% url 'staff:settings_input' %}"
+                           hx-vals='js:{field: "default_work_end", value: event.target.value}'
+                           hx-trigger="change"
+                           hx-swap="none">
+                </div>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "Break Duration" %}</div>
+                    <div class="list-item-note">{% trans "Default break duration in minutes" %}</div>
+                </div>
+                <div class="list-item-end">
+                    <input type="number" name="default_break_duration"
+                           value="{{ settings.default_break_duration }}"
+                           class="input input-sm"
+                           style="width: 80px;"
+                           hx-post="{% url 'staff:settings_input' %}"
+                           hx-vals='js:{field: "default_break_duration", value: event.target.value}'
+                           hx-trigger="change"
+                           hx-swap="none"
+                           min="0">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scheduling Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% icon "calendar-outline" css_class="text-warning" %} {% trans "Scheduling" %}</h3>
+        </div>
+        <div class="list">
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "Minimum Advance Booking" %}</div>
+                    <div class="list-item-note">{% trans "Hours before an appointment can be booked" %}</div>
+                </div>
+                <div class="list-item-end">
+                    <input type="number" name="min_advance_booking"
+                           value="{{ settings.min_advance_booking }}"
+                           class="input input-sm"
+                           style="width: 80px;"
+                           hx-post="{% url 'staff:settings_input' %}"
+                           hx-vals='js:{field: "min_advance_booking", value: event.target.value}'
+                           hx-trigger="change"
+                           hx-swap="none"
+                           min="0">
+                </div>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "Maximum Daily Hours" %}</div>
+                    <div class="list-item-note">{% trans "Maximum working hours per day" %}</div>
+                </div>
+                <div class="list-item-end">
+                    <input type="number" name="max_daily_hours"
+                           value="{{ settings.max_daily_hours }}"
+                           class="input input-sm"
+                           style="width: 80px;"
+                           hx-post="{% url 'staff:settings_input' %}"
+                           hx-vals='js:{field: "max_daily_hours", value: event.target.value}'
+                           hx-trigger="change"
+                           hx-swap="none"
+                           min="1" max="24">
+                </div>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "Overtime Threshold" %}</div>
+                    <div class="list-item-note">{% trans "Weekly hours before overtime applies" %}</div>
+                </div>
+                <div class="list-item-end">
+                    <input type="number" name="overtime_threshold"
+                           value="{{ settings.overtime_threshold }}"
+                           class="input input-sm"
+                           style="width: 80px;"
+                           hx-post="{% url 'staff:settings_input' %}"
+                           hx-vals='js:{field: "overtime_threshold", value: event.target.value}'
+                           hx-trigger="change"
+                           hx-swap="none"
+                           min="1">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Display Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% icon "eye-outline" css_class="text-success" %} {% trans "Display" %}</h3>
+        </div>
+        <div class="list">
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "Show Staff Photos" %}</div>
+                    <div class="list-item-note">{% trans "Display staff photos to customers" %}</div>
+                </div>
+                <div class="list-item-end">
+                    <label class="toggle color-success">
+                        <input type="checkbox" name="show_staff_photos"
+                               {% if settings.show_staff_photos %}checked{% endif %}
+                               hx-post="{% url 'staff:settings_toggle' %}"
+                               hx-vals='{"field": "show_staff_photos"}'
+                               hx-swap="none">
+                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    </label>
+                </div>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "Show Staff Bio" %}</div>
+                    <div class="list-item-note">{% trans "Display staff biography to customers" %}</div>
+                </div>
+                <div class="list-item-end">
+                    <label class="toggle color-success">
+                        <input type="checkbox" name="show_staff_bio"
+                               {% if settings.show_staff_bio %}checked{% endif %}
+                               hx-post="{% url 'staff:settings_toggle' %}"
+                               hx-vals='{"field": "show_staff_bio"}'
+                               hx-swap="none">
+                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    </label>
+                </div>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "Allow Staff Selection" %}</div>
+                    <div class="list-item-note">{% trans "Let customers choose specific staff members" %}</div>
+                </div>
+                <div class="list-item-end">
+                    <label class="toggle color-success">
+                        <input type="checkbox" name="allow_staff_selection"
+                               {% if settings.allow_staff_selection %}checked{% endif %}
+                               hx-post="{% url 'staff:settings_toggle' %}"
+                               hx-vals='{"field": "allow_staff_selection"}'
+                               hx-swap="none">
+                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% icon "notifications-outline" css_class="text-error" %} {% trans "Notifications" %}</h3>
+        </div>
+        <div class="list">
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "New Appointment" %}</div>
+                    <div class="list-item-note">{% trans "Notify staff when a new appointment is booked" %}</div>
+                </div>
+                <div class="list-item-end">
+                    <label class="toggle color-success">
+                        <input type="checkbox" name="notify_new_appointment"
+                               {% if settings.notify_new_appointment %}checked{% endif %}
+                               hx-post="{% url 'staff:settings_toggle' %}"
+                               hx-vals='{"field": "notify_new_appointment"}'
+                               hx-swap="none">
+                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    </label>
+                </div>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-label">{% trans "Cancellation" %}</div>
+                    <div class="list-item-note">{% trans "Notify staff when an appointment is cancelled" %}</div>
+                </div>
+                <div class="list-item-end">
+                    <label class="toggle color-success">
+                        <input type="checkbox" name="notify_cancellation"
+                               {% if settings.notify_cancellation %}checked{% endif %}
+                               hx-post="{% url 'staff:settings_toggle' %}"
+                               hx-vals='{"field": "notify_cancellation"}'
+                               hx-swap="none">
+                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset -->
+    <div class="card" style="border-color: var(--color-warning)">
+        <div class="card-header">
+            <h3 class="card-title text-warning">{% trans "Reset Settings" %}</h3>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">{% trans "Restore all staff settings to their default values." %}</p>
+            <button type="button" class="btn color-warning btn-outline"
+                    onclick="resetSettings()">
+                {% icon "refresh-outline" %} {% trans "Reset to Defaults" %}
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function resetSettings() {
+    if (confirm('{% trans "Reset all settings to defaults?" %}')) {
+        fetch('{% url "staff:settings_reset" %}', {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+        }).then(function(r) {
+            if (r.ok) htmx.ajax('GET', '{% url "staff:settings" %}', '#main-content-area');
+        });
+    }
+}
+</script>
