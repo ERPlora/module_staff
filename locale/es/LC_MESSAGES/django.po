@@ -1,0 +1,746 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-24 23:58+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
+
+msgid "Staff"
+msgstr "Personal"
+
+msgid "Search staff..."
+msgstr "Buscar personal..."
+
+msgid "All statuses"
+msgstr "Todos los estados"
+
+msgid "Default Work Start"
+msgstr "Hora de inicio predeterminada"
+
+msgid "Default Work End"
+msgstr "Hora de fin predeterminada"
+
+msgid "Default Break Duration (minutes)"
+msgstr "Duración del descanso predeterminada (minutos)"
+
+msgid "Minimum Advance Booking (hours)"
+msgstr "Reserva mínima con antelación (horas)"
+
+msgid "Minimum hours before appointment can be booked"
+msgstr "Horas mínimas antes de que se pueda reservar una cita"
+
+msgid "Maximum Daily Hours"
+msgstr "Horas diarias máximas"
+
+msgid "Overtime Threshold (hours/week)"
+msgstr "Umbral de horas extra (horas/semana)"
+
+msgid "Show Staff Photos"
+msgstr "Mostrar fotos del personal"
+
+msgid "Show Staff Bio"
+msgstr "Mostrar biografía del personal"
+
+msgid "Allow Staff Selection"
+msgstr "Permitir selección de personal"
+
+msgid "Allow customers to select specific staff member"
+msgstr ""
+"Permitir a los clientes seleccionar un miembro del personal específico"
+
+msgid "Notify on New Appointment"
+msgstr "Notificar nueva cita"
+
+msgid "Notify on Cancellation"
+msgstr "Notificar cancelación"
+
+msgid "Staff Settings"
+msgstr "Ajustes de personal"
+
+msgid "Name"
+msgstr "Nombre"
+
+msgid "Description"
+msgstr "Descripción"
+
+msgid "Color"
+msgstr "Color"
+
+msgid "Hex color code"
+msgstr "Código de color hexadecimal"
+
+msgid "Order"
+msgstr "Orden"
+
+msgid "Active"
+msgstr "Activo"
+
+msgid "Staff Role"
+msgstr "Rol de personal"
+
+msgid "Staff Roles"
+msgstr "Roles de personal"
+
+msgid "Inactive"
+msgstr "Inactivo"
+
+msgid "On Leave"
+msgstr "De permiso"
+
+msgid "Terminated"
+msgstr "Despedido"
+
+msgid "First Name"
+msgstr "Nombre"
+
+msgid "Last Name"
+msgstr "Apellido"
+
+msgid "Email"
+msgstr "Correo electrónico"
+
+msgid "Phone"
+msgstr "Teléfono"
+
+msgid "Photo"
+msgstr "Foto"
+
+msgid "Employee ID"
+msgstr "ID de empleado"
+
+msgid "Role"
+msgstr "Rol"
+
+msgid "User Account"
+msgstr "Cuenta de usuario"
+
+msgid "Hire Date"
+msgstr "Fecha de contratación"
+
+msgid "Termination Date"
+msgstr "Fecha de despido"
+
+msgid "Status"
+msgstr "Estado"
+
+msgid "Bio"
+msgstr "Biografía"
+
+msgid "Specialties"
+msgstr "Especialidades"
+
+msgid "Comma-separated list of specialties"
+msgstr "Lista de especialidades separadas por comas"
+
+msgid "Is Bookable"
+msgstr "Es reservable"
+
+msgid "Can be booked for appointments"
+msgstr "Puede ser reservado para citas"
+
+msgid "Calendar Color"
+msgstr "Color del calendario"
+
+msgid "Color for calendar display"
+msgstr "Color para la vista del calendario"
+
+msgid "Booking Buffer (minutes)"
+msgstr "Margen de reserva (minutos)"
+
+msgid "Buffer time between appointments"
+msgstr "Tiempo de margen entre citas"
+
+msgid "Hourly Rate"
+msgstr "Tarifa por hora"
+
+msgid "Commission Rate (%)"
+msgstr "Tasa de comisión (%)"
+
+msgid "Internal Notes"
+msgstr "Notas internas"
+
+msgid "Staff Member"
+msgstr "Miembro del personal"
+
+msgid "Staff Members"
+msgstr "Miembros del personal"
+
+msgid "Schedule Name"
+msgstr "Nombre del horario"
+
+msgid "Is Default"
+msgstr "Es predeterminado"
+
+msgid "Effective From"
+msgstr "Vigente desde"
+
+msgid "Effective Until"
+msgstr "Vigente hasta"
+
+msgid "Staff Schedule"
+msgstr "Horario de personal"
+
+msgid "Staff Schedules"
+msgstr "Horarios de personal"
+
+msgid "Monday"
+msgstr "Lunes"
+
+msgid "Tuesday"
+msgstr "Martes"
+
+msgid "Wednesday"
+msgstr "Miércoles"
+
+msgid "Thursday"
+msgstr "Jueves"
+
+msgid "Friday"
+msgstr "Viernes"
+
+msgid "Saturday"
+msgstr "Sábado"
+
+msgid "Sunday"
+msgstr "Domingo"
+
+msgid "Schedule"
+msgstr "Horario"
+
+msgid "Day of Week"
+msgstr "Día de la semana"
+
+msgid "Start Time"
+msgstr "Hora de inicio"
+
+msgid "End Time"
+msgstr "Hora de fin"
+
+msgid "Break Start"
+msgstr "Inicio del descanso"
+
+msgid "Break End"
+msgstr "Fin del descanso"
+
+msgid "Is Working Day"
+msgstr "Es día laboral"
+
+msgid "Working Hours"
+msgstr "Horario laboral"
+
+msgid "End time must be after start time."
+msgstr "La hora de fin debe ser posterior a la hora de inicio."
+
+msgid "Break end must be after break start."
+msgstr "El fin del descanso debe ser posterior al inicio."
+
+msgid "Break must be within working hours."
+msgstr "El descanso debe estar dentro del horario laboral."
+
+msgid "Vacation"
+msgstr "Vacaciones"
+
+msgid "Sick Leave"
+msgstr "Baja por enfermedad"
+
+msgid "Personal Leave"
+msgstr "Permiso personal"
+
+msgid "Training"
+msgstr "Formación"
+
+msgid "Other"
+msgstr "Otro"
+
+msgid "Pending"
+msgstr "Pendiente"
+
+msgid "Approved"
+msgstr "Aprobado"
+
+msgid "Rejected"
+msgstr "Rechazado"
+
+msgid "Cancelled"
+msgstr "Cancelado"
+
+msgid "Type"
+msgstr "Tipo"
+
+msgid "Start Date"
+msgstr "Fecha de inicio"
+
+msgid "End Date"
+msgstr "Fecha de fin"
+
+msgid "For partial day off"
+msgstr "Para día libre parcial"
+
+msgid "Full Day"
+msgstr "Día completo"
+
+msgid "Reason"
+msgstr "Motivo"
+
+msgid "Approved By"
+msgstr "Aprobado por"
+
+msgid "Approved At"
+msgstr "Aprobado el"
+
+msgid "Notes"
+msgstr "Notas"
+
+msgid "Time Off"
+msgstr "Tiempo libre"
+
+msgid "End date must be after start date."
+msgstr "La fecha de fin debe ser posterior a la fecha de inicio."
+
+msgid "Service"
+msgstr "Servicio"
+
+msgid "Service Name"
+msgstr "Nombre del servicio"
+
+msgid "Cached service name"
+msgstr "Nombre de servicio en caché"
+
+msgid "Custom Duration (minutes)"
+msgstr "Duración personalizada (minutos)"
+
+msgid "Override service default duration"
+msgstr "Sobrescribir duración predeterminada del servicio"
+
+msgid "Custom Price"
+msgstr "Precio personalizado"
+
+msgid "Override service default price"
+msgstr "Sobrescribir precio predeterminado del servicio"
+
+msgid "Primary Service"
+msgstr "Servicio principal"
+
+msgid "Primary/specialty service for this staff"
+msgstr "Servicio principal/especialidad de este personal"
+
+msgid "Staff Service"
+msgstr "Servicio de personal"
+
+msgid "Staff Services"
+msgstr "Servicios de personal"
+
+msgid "Overview"
+msgstr "Vista general"
+
+msgid "Schedules"
+msgstr "Horarios"
+
+msgid "Roles"
+msgstr "Roles"
+
+msgid "Settings"
+msgstr "Ajustes"
+
+msgid "Total Staff"
+msgstr "Total de personal"
+
+msgid "Bookable"
+msgstr "Reservable"
+
+msgid "Quick Actions"
+msgstr "Acciones rápidas"
+
+msgid "Add Staff Member"
+msgstr "Añadir miembro del personal"
+
+msgid "Create a new staff profile"
+msgstr "Crear un nuevo perfil de personal"
+
+msgid "Manage Roles"
+msgstr "Gestionar roles"
+
+msgid "roles configured"
+msgstr "roles configurados"
+
+msgid "Manage staff working hours"
+msgstr "Gestionar horario laboral del personal"
+
+msgid "Recent Staff Members"
+msgstr "Personal reciente"
+
+msgid "View All"
+msgstr "Ver todo"
+
+msgid "No staff members yet"
+msgstr "Sin personal aún"
+
+msgid "Add First Staff Member"
+msgstr "Añadir primer miembro del personal"
+
+msgid "Pending Time Off Requests"
+msgstr "Solicitudes de tiempo libre pendientes"
+
+msgid "Reject this time off request?"
+msgstr "¿Rechazar esta solicitud de tiempo libre?"
+
+msgid "Back to Staff"
+msgstr "Volver a personal"
+
+msgid "Edit"
+msgstr "Editar"
+
+msgid "Yes"
+msgstr "Sí"
+
+msgid "No"
+msgstr "No"
+
+msgid "Commission"
+msgstr "Comisión"
+
+msgid "Call"
+msgstr "Llamar"
+
+msgid "Services"
+msgstr "Servicios"
+
+msgid "Contact Information"
+msgstr "Información de contacto"
+
+msgid "Employment Details"
+msgstr "Detalles de empleo"
+
+msgid "Years of Service"
+msgstr "Años de servicio"
+
+msgid "Booking Buffer"
+msgstr "Margen de reserva"
+
+msgid "min"
+msgstr "min"
+
+msgid "Assigned Services"
+msgstr "Servicios asignados"
+
+msgid "Manage"
+msgstr "Gestionar"
+
+msgid "Primary"
+msgstr "Principal"
+
+msgid "Default"
+msgstr "Por defecto"
+
+msgid "From"
+msgstr "Desde"
+
+msgid "Until"
+msgstr "Hasta"
+
+msgid "Recent Time Off"
+msgstr "Tiempo libre reciente"
+
+msgid "days"
+msgstr "días"
+
+msgid "Danger Zone"
+msgstr "Zona peligrosa"
+
+msgid "Delete Staff Member"
+msgstr "Eliminar miembro del personal"
+
+msgid "This action cannot be undone"
+msgstr "Esta acción no se puede deshacer"
+
+msgid "Delete"
+msgstr "Eliminar"
+
+msgid "Are you sure you want to delete"
+msgstr "¿Estás seguro de que quieres eliminar"
+
+msgid "This action cannot be undone."
+msgstr "Esta acción no se puede deshacer."
+
+msgid "Back to Profile"
+msgstr "Volver al perfil"
+
+msgid "Personal Information"
+msgstr "Información personal"
+
+msgid "Employment"
+msgstr "Empleo"
+
+msgid "Display Order"
+msgstr "Orden de visualización"
+
+msgid "Booking"
+msgstr "Reserva"
+
+msgid "Available for Bookings"
+msgstr "Disponible para reservas"
+
+msgid "Compensation"
+msgstr "Compensación"
+
+#, python-format
+msgid "Commission Rate (%%)"
+msgstr "Tasa de comisión (%%)"
+
+msgid "Additional Information"
+msgstr "Información adicional"
+
+msgid "Update Staff Member"
+msgstr "Actualizar miembro del personal"
+
+msgid "Create Staff Member"
+msgstr "Crear miembro del personal"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "New Staff"
+msgstr "Nuevo personal"
+
+msgid "Search by name, email, phone..."
+msgstr "Buscar por nombre, email, teléfono..."
+
+msgid "All roles"
+msgstr "Todos los roles"
+
+msgid "New Role"
+msgstr "Nuevo rol"
+
+msgid "member"
+msgstr "miembro"
+
+msgid "No roles created yet"
+msgstr "Sin roles creados aún"
+
+msgid "Create First Role"
+msgstr "Crear primer rol"
+
+msgid "Add Role"
+msgstr "Añadir rol"
+
+msgid "Role Name"
+msgstr "Nombre del rol"
+
+msgid "e.g. Stylist, Manager"
+msgstr "ej. Estilista, Gerente"
+
+msgid "Optional description..."
+msgstr "Descripción opcional..."
+
+msgid "Save"
+msgstr "Guardar"
+
+msgid "Edit Role"
+msgstr "Editar rol"
+
+msgid "Name is required"
+msgstr "El nombre es obligatorio"
+
+msgid "Are you sure you want to delete role"
+msgstr "¿Estás seguro de que quieres eliminar el rol"
+
+msgid "Back to Schedules"
+msgstr "Volver a horarios"
+
+msgid "Break"
+msgstr "Descanso"
+
+msgid "Day Off"
+msgstr "Día libre"
+
+msgid "No working hours defined"
+msgstr "Sin horario laboral definido"
+
+msgid "Delete Schedule"
+msgstr "Eliminar horario"
+
+msgid "Remove this schedule permanently"
+msgstr "Eliminar este horario permanentemente"
+
+msgid "Are you sure you want to delete this schedule?"
+msgstr "¿Estás seguro de que quieres eliminar este horario?"
+
+msgid "schedule"
+msgstr "horario"
+
+msgid "No schedules"
+msgstr "Sin horarios"
+
+msgid "No schedule"
+msgstr "Sin horario"
+
+msgid "Add"
+msgstr "Añadir"
+
+msgid "No active staff members"
+msgstr "No hay personal activo"
+
+msgid "Add active staff members to manage their schedules"
+msgstr "Añadir personal activo para gestionar sus horarios"
+
+msgid "Add Schedule"
+msgstr "Añadir horario"
+
+msgid "e.g. Default Schedule, Summer Hours"
+msgstr "ej. Horario predeterminado, Horario de verano"
+
+msgid "Default Schedule"
+msgstr "Horario predeterminado"
+
+msgid "Set as the default schedule for this staff member"
+msgstr "Establecer como horario predeterminado para este miembro del personal"
+
+msgid "Default Working Hours"
+msgstr "Horario laboral predeterminado"
+
+msgid "Work Start Time"
+msgstr "Hora de inicio de trabajo"
+
+msgid "Default start time for new schedules"
+msgstr "Hora de inicio predeterminada para nuevos horarios"
+
+msgid "Work End Time"
+msgstr "Hora de fin de trabajo"
+
+msgid "Default end time for new schedules"
+msgstr "Hora de fin predeterminada para nuevos horarios"
+
+msgid "Break Duration"
+msgstr "Duración del descanso"
+
+msgid "Default break duration in minutes"
+msgstr "Duración predeterminada del descanso en minutos"
+
+msgid "Scheduling"
+msgstr "Programación"
+
+msgid "Minimum Advance Booking"
+msgstr "Reserva mínima con antelación"
+
+msgid "Hours before an appointment can be booked"
+msgstr "Horas antes de que se pueda reservar una cita"
+
+msgid "Maximum working hours per day"
+msgstr "Máximo de horas de trabajo por día"
+
+msgid "Overtime Threshold"
+msgstr "Umbral de horas extra"
+
+msgid "Weekly hours before overtime applies"
+msgstr "Horas semanales antes de aplicar horas extra"
+
+msgid "Display"
+msgstr "Mostrar"
+
+msgid "Display staff photos to customers"
+msgstr "Mostrar fotos del personal a los clientes"
+
+msgid "Display staff biography to customers"
+msgstr "Mostrar biografía del personal a los clientes"
+
+msgid "Let customers choose specific staff members"
+msgstr "Permitir a los clientes elegir personal específico"
+
+msgid "Notifications"
+msgstr "Notificaciones"
+
+msgid "New Appointment"
+msgstr "Nueva cita"
+
+msgid "Notify staff when a new appointment is booked"
+msgstr "Notificar al personal cuando se reserve una nueva cita"
+
+msgid "Cancellation"
+msgstr "Cancelación"
+
+msgid "Notify staff when an appointment is cancelled"
+msgstr "Notificar al personal cuando se cancele una cita"
+
+msgid "Reset Settings"
+msgstr "Restablecer ajustes"
+
+msgid "Restore all staff settings to their default values."
+msgstr ""
+"Restaurar todos los ajustes de personal a sus valores predeterminados."
+
+msgid "Reset to Defaults"
+msgstr "Restablecer valores predeterminados"
+
+msgid "Reset all settings to defaults?"
+msgstr "¿Restablecer todos los ajustes a los valores predeterminados?"
+
+msgid "No staff members found"
+msgstr "No se encontró personal"
+
+msgid "Default settings"
+msgstr "Ajustes predeterminados"
+
+msgid "No services assigned"
+msgstr "Sin servicios asignados"
+
+msgid "Assign services to define what this staff member can do"
+msgstr ""
+"Asignar servicios para definir qué puede hacer este miembro del personal"
+
+msgid "Time Off Requests"
+msgstr "Solicitudes de tiempo libre"
+
+msgid "day"
+msgstr "día"
+
+msgid "Partial"
+msgstr "Parcial"
+
+msgid "Approve"
+msgstr "Aprobar"
+
+msgid "Reject"
+msgstr "Rechazar"
+
+msgid "No time off requests"
+msgstr "Sin solicitudes de tiempo libre"
+
+msgid "Time off requests for this staff member will appear here"
+msgstr "Las solicitudes de tiempo libre de este personal aparecerán aquí"
+
+msgid "Add Time Off"
+msgstr "Añadir tiempo libre"
+
+msgid "Leave Type"
+msgstr "Tipo de ausencia"
+
+msgid "Personal"
+msgstr "Personal"
+
+msgid "Uncheck for partial day off"
+msgstr "Desmarcar para día libre parcial"
+
+msgid "Optional reason..."
+msgstr "Motivo opcional..."
+
+msgid "Start and end dates are required"
+msgstr "Las fechas de inicio y fin son obligatorias"
+
+msgid "Delete this time off request?"
+msgstr "¿Eliminar esta solicitud de tiempo libre?"
+
+msgid "Invalid field"
+msgstr "Campo inválido"

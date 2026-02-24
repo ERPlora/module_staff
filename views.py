@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST, require_GET
+from django.utils.translation import gettext_lazy as _
 
 from apps.accounts.decorators import login_required
 from apps.core.htmx import htmx_view
@@ -612,7 +613,7 @@ def settings_toggle(request):
     ]
 
     if field not in toggleable:
-        return JsonResponse({'success': False, 'error': 'Invalid field'}, status=400)
+        return JsonResponse({'success': False, 'error': _('Invalid field')}, status=400)
 
     setattr(staff_settings, field, not getattr(staff_settings, field))
     staff_settings.save(update_fields=[field, 'updated_at'])
@@ -637,7 +638,7 @@ def settings_input(request):
     }
 
     if field not in input_fields:
-        return JsonResponse({'success': False, 'error': 'Invalid field'}, status=400)
+        return JsonResponse({'success': False, 'error': _('Invalid field')}, status=400)
 
     try:
         parsed = input_fields[field](value)
