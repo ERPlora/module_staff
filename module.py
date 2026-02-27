@@ -20,3 +20,7 @@ NAVIGATION = [
 
 # Module Dependencies
 DEPENDENCIES = ['services']
+
+PERMISSIONS = [
+    'staff.manage_settings',
+]
