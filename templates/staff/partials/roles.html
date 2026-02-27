@@ -143,7 +143,7 @@ roleModal.addEventListener('click', function(e) {
 async function saveRole() {
     const id = document.getElementById('role-id').value;
     const name = document.getElementById('role-name').value;
-    if (!name) { alert('{% trans "Name is required" %}'); return; }
+    if (!name) { showToast('{% trans "Name is required" %}', 'warning'); return; }
 
     const formData = new FormData();
     formData.append('name', name);
@@ -169,7 +169,7 @@ async function saveRole() {
             htmx.ajax('GET', '{% url "staff:role_list" %}', {target: '#main-content-area', pushUrl: false});
         } else if (data.errors) {
             const firstField = Object.keys(data.errors)[0];
-            alert(firstField + ': ' + data.errors[firstField][0]);
+            showToast(firstField + ': ' + data.errors[firstField][0], 'error');
         }
     } catch (e) { console.error(e); }
 }

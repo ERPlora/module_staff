@@ -164,7 +164,7 @@ async function saveSchedule() {
     const staffPk = document.getElementById('schedule-staff-pk').value;
     const scheduleId = document.getElementById('schedule-id').value;
     const name = document.getElementById('schedule-name').value;
-    if (!name) { alert('{% trans "Name is required" %}'); return; }
+    if (!name) { showToast('{% trans "Name is required" %}', 'warning'); return; }
 
     const formData = new FormData();
     formData.append('name', name);
@@ -194,7 +194,7 @@ async function saveSchedule() {
             htmx.ajax('GET', '{% url "staff:schedules" %}', {target: '#main-content-area', pushUrl: false});
         } else if (data.errors) {
             const firstField = Object.keys(data.errors)[0];
-            alert(firstField + ': ' + data.errors[firstField][0]);
+            showToast(firstField + ': ' + data.errors[firstField][0], 'error');
         }
     } catch (e) { console.error(e); }
 }

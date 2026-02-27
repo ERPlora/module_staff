@@ -1,15 +1,7 @@
 {% load djicons i18n djicons djicons %}
+<div data-back-url="{% url 'staff:detail' staff.id %}" hidden></div>
 
 <div class="p-4">
-    <!-- Back Button -->
-    <button class="btn btn-ghost mb-3"
-            hx-get="{% url 'staff:detail' staff.id %}"
-            hx-target="#main-content-area"
-            hx-push-url="true">
-        {% icon "arrow-back-outline" css_class="mr-1" %}
-        {% trans "Back to Profile" %}
-    </button>
-
     <!-- Time Off List -->
     <div class="card">
         <div class="card-header">
@@ -196,7 +188,7 @@ async function saveTimeOff() {
     const timeoffId = document.getElementById('timeoff-id').value;
     const startDate = document.getElementById('timeoff-start-date').value;
     const endDate = document.getElementById('timeoff-end-date').value;
-    if (!startDate || !endDate) { alert('{% trans "Start and end dates are required" %}'); return; }
+    if (!startDate || !endDate) { showToast('{% trans "Start and end dates are required" %}', 'warning'); return; }
 
     const formData = new FormData();
     formData.append('leave_type', document.getElementById('timeoff-type').value);
@@ -228,7 +220,7 @@ async function saveTimeOff() {
             htmx.ajax('GET', '{% url "staff:time_off_list" staff.id %}', {target: '#main-content-area', pushUrl: false});
         } else if (data.errors) {
             const firstField = Object.keys(data.errors)[0];
-            alert(firstField + ': ' + data.errors[firstField][0]);
+            showToast(firstField + ': ' + data.errors[firstField][0], 'error');
         }
     } catch (e) { console.error(e); }
 }
