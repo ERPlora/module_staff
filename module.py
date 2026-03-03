@@ -24,3 +24,9 @@ DEPENDENCIES = ['services']
 PERMISSIONS = [
     'staff.manage_settings',
 ]
+
+ROLE_PERMISSIONS = {
+    "admin": ["*"],
+    "manager": [],
+    "employee": [],
+}
