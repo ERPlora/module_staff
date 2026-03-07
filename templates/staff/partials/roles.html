@@ -138,7 +138,7 @@ function closeRoleModal() {
 
 roleModal.addEventListener('click', function(e) {
     if (e.target === roleModal) closeRoleModal();
-});
+},
 
 async function saveRole() {
     const id = document.getElementById('role-id').value;
@@ -162,11 +162,11 @@ async function saveRole() {
             method: 'POST',
             headers: {'X-CSRFToken': '{{ csrf_token }}'},
             body: formData
-        });
+        },
         const data = await response.json();
         if (data.success) {
             closeRoleModal();
-            htmx.ajax('GET', '{% url "staff:role_list" %}', {target: '#main-content-area', pushUrl: false});
+            htmx.ajax('GET', '{% url "staff:role_list" %}', {target: '#main-content-area', pushUrl: false},
         } else if (data.errors) {
             const firstField = Object.keys(data.errors)[0];
             showToast(firstField + ': ' + data.errors[firstField][0], 'error');
@@ -180,7 +180,7 @@ async function deleteRole(id, name) {
         const response = await fetch('{% url "staff:role_delete" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
             method: 'POST',
             headers: {'X-CSRFToken': '{{ csrf_token }}'}
-        });
+        },
         if (response.ok) {
             const el = document.getElementById('role-' + id);
             if (el) { el.style.opacity = '0.5'; setTimeout(function() { el.remove(); }, 300); }

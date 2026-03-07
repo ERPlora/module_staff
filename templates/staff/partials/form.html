@@ -172,13 +172,13 @@ async function saveStaff() {
             method: 'POST',
             headers: {'X-CSRFToken': '{{ csrf_token }}'},
             body: formData
-        });
+        },
         const data = await response.json();
         if (data.success) {
             {% if mode == 'edit' %}
-            htmx.ajax('GET', '{% url "staff:detail" staff.id %}', {target: '#main-content-area', pushUrl: true});
+            htmx.ajax('GET', '{% url "staff:detail" staff.id %}', {target: '#main-content-area', pushUrl: true},
             {% else %}
-            htmx.ajax('GET', '{% url "staff:list" %}', {target: '#main-content-area', pushUrl: true});
+            htmx.ajax('GET', '{% url "staff:list" %}', {target: '#main-content-area', pushUrl: true},
             {% endif %}
         } else if (data.errors) {
             // Show first error

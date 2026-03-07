@@ -182,7 +182,7 @@ function closeTimeOffModal() {
 
 timeoffModal.addEventListener('click', function(e) {
     if (e.target === timeoffModal) closeTimeOffModal();
-});
+},
 
 async function saveTimeOff() {
     const timeoffId = document.getElementById('timeoff-id').value;
@@ -213,11 +213,11 @@ async function saveTimeOff() {
             method: 'POST',
             headers: {'X-CSRFToken': '{{ csrf_token }}'},
             body: formData
-        });
+        },
         const data = await response.json();
         if (data.success) {
             closeTimeOffModal();
-            htmx.ajax('GET', '{% url "staff:time_off_list" staff.id %}', {target: '#main-content-area', pushUrl: false});
+            htmx.ajax('GET', '{% url "staff:time_off_list" staff.id %}', {target: '#main-content-area', pushUrl: false},
         } else if (data.errors) {
             const firstField = Object.keys(data.errors)[0];
             showToast(firstField + ': ' + data.errors[firstField][0], 'error');
@@ -230,9 +230,9 @@ async function approveTimeOff(id, btn) {
         const response = await fetch('{% url "staff:time_off_approve" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
             method: 'POST',
             headers: {'X-CSRFToken': '{{ csrf_token }}'}
-        });
+        },
         if (response.ok) {
-            htmx.ajax('GET', '{% url "staff:time_off_list" staff.id %}', {target: '#main-content-area'});
+            htmx.ajax('GET', '{% url "staff:time_off_list" staff.id %}', {target: '#main-content-area'},
         }
     } catch (e) { console.error(e); }
 }
@@ -243,9 +243,9 @@ async function rejectTimeOff(id, btn) {
         const response = await fetch('{% url "staff:time_off_reject" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
             method: 'POST',
             headers: {'X-CSRFToken': '{{ csrf_token }}'}
-        });
+        },
         if (response.ok) {
-            htmx.ajax('GET', '{% url "staff:time_off_list" staff.id %}', {target: '#main-content-area'});
+            htmx.ajax('GET', '{% url "staff:time_off_list" staff.id %}', {target: '#main-content-area'},
         }
     } catch (e) { console.error(e); }
 }
@@ -257,7 +257,7 @@ async function deleteTimeOff(id, btn) {
         const response = await fetch('{% url "staff:time_off_delete" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
             method: 'POST',
             headers: {'X-CSRFToken': '{{ csrf_token }}'}
-        });
+        },
         if (response.ok) {
             li.style.opacity = '0.5';
             setTimeout(function() { li.remove(); }, 300);

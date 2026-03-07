@@ -200,7 +200,7 @@ async function approveTimeOff(id, btn) {
         const response = await fetch('{% url "staff:time_off_approve" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
             method: 'POST',
             headers: {'X-CSRFToken': '{{ csrf_token }}'}
-        });
+        },
         if (response.ok) {
             li.style.opacity = '0.5';
             setTimeout(function() { li.remove(); }, 300);
@@ -215,7 +215,7 @@ async function rejectTimeOff(id, btn) {
         const response = await fetch('{% url "staff:time_off_reject" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
             method: 'POST',
             headers: {'X-CSRFToken': '{{ csrf_token }}'}
-        });
+        },
         if (response.ok) {
             li.style.opacity = '0.5';
             setTimeout(function() { li.remove(); }, 300);

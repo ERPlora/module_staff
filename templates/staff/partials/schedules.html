@@ -158,7 +158,7 @@ function closeScheduleModal() {
 
 scheduleModal.addEventListener('click', function(e) {
     if (e.target === scheduleModal) closeScheduleModal();
-});
+},
 
 async function saveSchedule() {
     const staffPk = document.getElementById('schedule-staff-pk').value;
@@ -187,11 +187,11 @@ async function saveSchedule() {
             method: 'POST',
             headers: {'X-CSRFToken': '{{ csrf_token }}'},
             body: formData
-        });
+        },
         const data = await response.json();
         if (data.success) {
             closeScheduleModal();
-            htmx.ajax('GET', '{% url "staff:schedules" %}', {target: '#main-content-area', pushUrl: false});
+            htmx.ajax('GET', '{% url "staff:schedules" %}', {target: '#main-content-area', pushUrl: false},
         } else if (data.errors) {
             const firstField = Object.keys(data.errors)[0];
             showToast(firstField + ': ' + data.errors[firstField][0], 'error');

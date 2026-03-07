@@ -345,9 +345,9 @@ async function deleteStaff(id, name) {
         const response = await fetch('{% url "staff:delete" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id), {
             method: 'POST',
             headers: {'X-CSRFToken': '{{ csrf_token }}'}
-        });
+        },
         if (response.ok) {
-            htmx.ajax('GET', '{% url "staff:list" %}', {target: '#main-content-area', pushUrl: true});
+            htmx.ajax('GET', '{% url "staff:list" %}', {target: '#main-content-area', pushUrl: true},
         }
     } catch (e) { console.error(e); }
 }
