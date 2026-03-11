@@ -12,6 +12,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.accounts.decorators import login_required, permission_required
 from apps.core.htmx import htmx_view
+from apps.core.media_helpers import handle_image_field
 from apps.modules_runtime.navigation import with_module_nav
 
 from .models import (
@@ -146,6 +147,8 @@ def staff_create(request):
             member = form.save(commit=False)
             member.hub_id = hub
             member.save()
+            if handle_image_field(request, member, 'photo'):
+                member.save(update_fields=['photo'])
             return JsonResponse({'success': True, 'id': str(member.pk)})
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
@@ -187,7 +190,9 @@ def staff_edit(request, pk):
     if request.method == 'POST':
         form = StaffMemberForm(request.POST, request.FILES, instance=member)
         if form.is_valid():
-            form.save()
+            member = form.save()
+            if handle_image_field(request, member, 'photo'):
+                member.save(update_fields=['photo'])
             return JsonResponse({'success': True})
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
